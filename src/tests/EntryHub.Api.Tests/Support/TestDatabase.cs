@@ -6,7 +6,7 @@ namespace EntryHub.Api.Tests.Support;
 
 /// <summary>
 /// Connection settings of the PostgreSQL used by integration tests.
-/// The default matches the local Docker Compose file; CI and other machines set <c>ENTRYHUB_TEST_CONNECTION</c>.
+/// The default is a PostgreSQL on localhost with the user, password and database <c>entryhub</c>; CI and other machines set <c>ENTRYHUB_TEST_CONNECTION</c>.
 /// </summary>
 internal static class TestDatabase
 {

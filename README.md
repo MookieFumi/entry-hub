@@ -13,7 +13,7 @@
   <img alt="ASP.NET Core Minimal APIs" src="https://img.shields.io/badge/ASP.NET%20Core-Minimal%20APIs-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
   <img alt="EF Core 10" src="https://img.shields.io/badge/EF%20Core-10-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
   <img alt="PostgreSQL 17" src="https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&amp;logoColor=white&amp;style=flat-square">
-  <img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&amp;logoColor=white&amp;style=flat-square">
+  <img alt="Aspire 13" src="https://img.shields.io/badge/Aspire-13-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
 </p>
 <p>
   <a href="https://www.conventionalcommits.org"><img alt="Conventional Commits" src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&amp;logoColor=white&amp;style=flat-square"></a>
@@ -35,6 +35,8 @@ src/
   Directory.Build.props      shared build properties and quality rules
   Directory.Packages.props   Central Package Management: one version per package
   EntryHub.Api/              Minimal API organized by vertical slices (Features/V1/...)
+  EntryHub.AppHost/          Aspire AppHost: PostgreSQL, the API and the dashboard
+  EntryHub.ServiceDefaults/  telemetry, health checks and resilience shared by the services
   tests/EntryHub.Api.Tests/  unit, handler and endpoint tests
 .github/                     workflows, composite governance action, Dependabot, CODEOWNERS
 .husky/                      Git hook that validates Conventional Commits
@@ -76,15 +78,27 @@ They live in `BookingRulesOptions` and can be changed in the `BookingRules` conf
 
 ## Run it locally
 
-Requirements: the .NET 10 SDK and Docker.
+Requirements: the .NET 10 SDK and a container runtime (Docker Desktop, Podman or similar).
 
-<!-- Docker Compose section: the Aspire AppHost replaces it, so this block and docker-compose.yml go away together. -->
 ```bash
-docker compose up -d        # PostgreSQL on localhost:5432
 cd src
-dotnet run --project EntryHub.Api
+dotnet run --project EntryHub.AppHost
+```
+
+The AppHost starts a PostgreSQL container (its data lives in a volume, so it survives restarts), waits for it, then
+starts the API with the connection string already injected. It prints the URL of the Aspire dashboard
+(http://localhost:15257 with the default profile), where you see the resources, their logs, traces and metrics. The
+API listens on http://localhost:5178:
+
+```bash
 curl http://localhost:5178/api/v1/health
 ```
+
+With the [Aspire CLI](https://aspire.dev/get-started/install-cli/) installed, `aspire run` from the repository root does
+the same.
+
+In Development the API also serves `/health` (PostgreSQL included) and `/alive`, which the AppHost uses to know when
+the API is ready. They are not mapped in other environments.
 
 ### Get a token
 
@@ -106,8 +120,8 @@ dotnet tool restore
 dotnet dotnet-ef migrations add <Name> --project EntryHub.Api --output-dir Data/Migrations
 ```
 
-The development connection string lives in `src/EntryHub.Api/appsettings.Development.json`
-and matches `docker-compose.yml`. It is a throwaway local credential, not a secret.
+There is no connection string in the repository: the AppHost injects it. Running `EntryHub.Api` on its own needs
+`ConnectionStrings__EntryHub` pointing to any PostgreSQL.
 
 ## API documentation and contract
 
@@ -138,8 +152,16 @@ dotnet test
 Each slice is tested in three layers: pure logic (no I/O), the handler against PostgreSQL, and the endpoint through
 `WebApplicationFactory`. The tests apply the migrations themselves before they touch the database.
 
-Handler and endpoint tests need a PostgreSQL. By default they use the one from Docker Compose.
-Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container).
+Handler and endpoint tests need a PostgreSQL. By default they look for one on `localhost:5432` with the user,
+password and database `entryhub`, for example:
+
+```bash
+docker run -d --name entryhub-test-db -p 5432:5432 -e POSTGRES_USER=entryhub -e POSTGRES_PASSWORD=entryhub \
+  -e POSTGRES_DB=entryhub postgres:17-alpine
+```
+
+Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container). A later pull
+request makes the tests start their own PostgreSQL through Aspire.
 
 ## What CI reports on each pull request
 

@@ -8,6 +8,8 @@ updates:
     groups:
       microsoft:
         patterns: ["Microsoft.*", "System.*"]
+      aspire:
+        patterns: ["Aspire.*"]
       entity-framework:
         patterns: ["Npgsql.*", "Microsoft.EntityFrameworkCore*"]
       testing:
