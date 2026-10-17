@@ -1,4 +1,5 @@
 using EntryHub.Api.Features.V1.Health.GetHealth;
+using EntryHub.Api.Features.V1.Rooms;
 
 namespace EntryHub.Api.Features.V1;
 
@@ -10,6 +11,7 @@ public static class V1Endpoints
     public static IServiceCollection AddV1Features(this IServiceCollection services)
     {
         services.AddScoped<GetHealthHandler>();
+        services.AddRoomsFeature();
 
         return services;
     }
@@ -19,6 +21,7 @@ public static class V1Endpoints
         var v1 = app.MapGroup("/api/v1");
 
         GetHealthEndpoint.Map(v1);
+        v1.MapRoomsEndpoints();
 
         return app;
     }

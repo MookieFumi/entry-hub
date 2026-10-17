@@ -1,4 +1,5 @@
 using EntryHub.Api.Data;
+using EntryHub.Api.Features.V1.Rooms.StreamRoomOccupancy;
 
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -15,9 +16,10 @@ namespace EntryHub.Api.Tests.Support;
 internal sealed class ApiFactory(string connectionString) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureTestServices(services =>
+        builder.UseEnvironment("Testing").ConfigureTestServices(services =>
         {
             services.RemoveAll<DbContextOptions<EntryHubDbContext>>();
             services.AddDbContext<EntryHubDbContext>(options => options.UseNpgsql(connectionString));
+            services.Configure<StreamRoomOccupancyOptions>(options => options.Interval = TimeSpan.FromMilliseconds(50));
         });
 }

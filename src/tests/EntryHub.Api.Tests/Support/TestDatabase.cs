@@ -1,3 +1,7 @@
+using EntryHub.Api.Data;
+
+using Microsoft.EntityFrameworkCore;
+
 namespace EntryHub.Api.Tests.Support;
 
 /// <summary>
@@ -19,4 +23,26 @@ internal static class TestDatabase
     /// </summary>
     public const string Unreachable =
         "Host=localhost;Port=1;Database=entryhub;Username=entryhub;Password=entryhub;Timeout=1;Command Timeout=1";
+
+    private static readonly Lazy<Task> Migrated = new(MigrateAsync);
+
+    /// <summary>
+    /// Applies the migrations once per test run, so tests that touch the schema can run in any order.
+    /// </summary>
+    public static Task EnsureMigratedAsync() => Migrated.Value;
+
+    public static EntryHubDbContext CreateContext(string? connectionString = null)
+    {
+        var options = new DbContextOptionsBuilder<EntryHubDbContext>()
+            .UseNpgsql(connectionString ?? ConnectionString)
+            .Options;
+
+        return new EntryHubDbContext(options);
+    }
+
+    private static async Task MigrateAsync()
+    {
+        await using var db = CreateContext();
+        await db.Database.MigrateAsync();
+    }
 }
