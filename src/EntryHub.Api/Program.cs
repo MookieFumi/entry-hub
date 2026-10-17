@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 
 using EntryHub.Api.Data;
+using EntryHub.Api.Documentation;
 using EntryHub.Api.Features.V1;
 using EntryHub.Api.Security;
 
@@ -15,6 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddValidation();
 builder.Services.AddEntryHubSecurity();
+builder.Services.AddEntryHubOpenApi();
 builder.Services.AddV1Features(builder.Configuration);
 
 var app = builder.Build();
@@ -30,6 +32,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapV1Endpoints();
+app.MapEntryHubDocumentation();
 
 app.Run();
 

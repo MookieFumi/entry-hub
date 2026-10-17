@@ -59,6 +59,11 @@ jobs:
         with:
           dependency-review: "false"
 
+      - name: API contract is up to date
+        # The Release build in the governance step regenerates contracts/EntryHub.Api.json.
+        # A different file means an endpoint changed without committing the new contract.
+        run: git diff --exit-code -- contracts
+
       - name: Version
         run: |
           dotnet tool restore

@@ -1,0 +1,65 @@
+# .github/workflows/release.yml
+name: release
+
+# Push a tag such as v1.2.0 to publish a release with the API contract and the static docs.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Generate the contract
+        # The Release build writes contracts/EntryHub.Api.json from the code at this tag.
+        run: dotnet build src/EntryHub.slnx -c Release
+
+      - name: Static docs
+        run: |
+          mkdir -p site
+          cp contracts/EntryHub.Api.json site/openapi.json
+          cp docs/index.html site/index.html
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME"
+          contracts/EntryHub.Api.json#openapi-v1.json
+          --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  pages:
+    needs: contract
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

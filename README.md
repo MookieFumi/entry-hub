@@ -107,6 +107,25 @@ dotnet dotnet-ef migrations add <Name> --project EntryHub.Api --output-dir Data/
 The development connection string lives in `src/EntryHub.Api/appsettings.Development.json`
 and matches `docker-compose.yml`. It is a throwaway local credential, not a secret.
 
+## API documentation and contract
+
+In Development the API serves an interactive page at `/scalar/v1` (Scalar, bundled with the app, no CDN) and the
+OpenAPI 3.1 document at `/openapi/v1.json` and `/openapi/v1.yaml`. Authorize with a token from `dotnet user-jwts`
+(see above) using the lock button.
+
+Outside Development the interactive page does not exist and the document needs a token with the `Facilities` role,
+so the contract is never public by accident. Open it to everyone on purpose by removing `RequireAuthorization` in
+`Documentation/OpenApiExtensions.cs`.
+
+The contract is also generated at build time into `contracts/EntryHub.Api.json` and committed. CI fails if an
+endpoint changes and that file does not, so every API change shows up in the pull request diff.
+
+## Releases
+
+Push a tag such as `v1.0.0` and the `release` workflow creates a GitHub Release with the contract attached
+(`openapi-v1.json`) and publishes the static docs of that version to GitHub Pages. Pages only ever shows the latest
+release; older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
+
 ## Tests
 
 ```bash
