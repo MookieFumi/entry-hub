@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 
-using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 
 using EntryHub.Api.Data;
@@ -12,7 +11,6 @@ using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Security;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EntryHub.AppHost.Tests;
 
@@ -52,25 +50,24 @@ public class SystemTests(EntryHubSystem system)
     }
 
     [Fact]
-    public async Task The_reminders_service_logs_a_reminder_for_a_booking_about_to_start()
+    public async Task The_reminders_service_marks_a_booking_about_to_start_as_reminded()
     {
         var connectionString = await system.GetConnectionStringAsync(CancellationToken.None);
         var options = new DbContextOptionsBuilder<EntryHubDbContext>().UseNpgsql(connectionString).Options;
-        var roomName = $"Room {Guid.NewGuid():N}";
-        var organizer = $"ana-{Guid.NewGuid():N}";
+        var bookingId = Guid.CreateVersion7();
         var now = DateTimeOffset.UtcNow;
 
         // The booking rules only allow office hours, so the booking goes straight into the database: what is
-        // under test is the reminders service reading it, not how the API creates it.
+        // under test is the reminders service finding it, not how the API creates it.
         await using (var db = new EntryHubDbContext(options))
         {
-            var room = new Room { Id = Guid.CreateVersion7(), Name = roomName, Floor = 1, Capacity = 8, CreatedAt = now };
+            var room = new Room { Id = Guid.CreateVersion7(), Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 8, CreatedAt = now };
             db.Rooms.Add(room);
             db.Bookings.Add(new Booking
             {
-                Id = Guid.CreateVersion7(),
+                Id = bookingId,
                 RoomId = room.Id,
-                OrganizerId = organizer,
+                OrganizerId = $"ana-{Guid.NewGuid():N}",
                 Title = "Planning",
                 StartAt = now.AddMinutes(5),
                 EndAt = now.AddMinutes(65),
@@ -80,18 +77,24 @@ public class SystemTests(EntryHubSystem system)
             await db.SaveChangesAsync();
         }
 
+        // The service marks the booking in the same statement that selects it, right before it logs the reminder,
+        // so the mark is what proves a round found it. It polls every 30 seconds.
         using var timeout = new CancellationTokenSource(ReminderTimeout);
-        var logs = system.App.Services.GetRequiredService<ResourceLoggerService>();
-        var found = false;
-        await foreach (var batch in logs.WatchAsync("reminders").WithCancellation(timeout.Token))
+        DateTimeOffset? reminderSentAt = null;
+        while (reminderSentAt is null && !timeout.IsCancellationRequested)
         {
-            if (batch.Any(line => line.Content.Contains(organizer, StringComparison.Ordinal) && line.Content.Contains(roomName, StringComparison.Ordinal)))
+            await using var db = new EntryHubDbContext(options);
+            reminderSentAt = await db.Bookings
+                .Where(booking => booking.Id == bookingId)
+                .Select(booking => booking.ReminderSentAt)
+                .SingleAsync(timeout.Token);
+
+            if (reminderSentAt is null)
             {
-                found = true;
-                break;
+                await Task.Delay(TimeSpan.FromSeconds(2), timeout.Token);
             }
         }
 
-        Assert.True(found, "The reminders service did not log the reminder.");
+        Assert.NotNull(reminderSentAt);
     }
 }
