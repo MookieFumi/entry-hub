@@ -64,6 +64,13 @@ jobs:
         # A different file means an endpoint changed without committing the new contract.
         run: git diff --exit-code -- contracts
 
+      - name: Kubernetes chart is up to date
+        # Regenerates the chart from the AppHost. A different file means the application model changed
+        # without committing the new chart (run scripts/publish-k8s.sh).
+        run: |
+          scripts/publish-k8s.sh
+          git diff --exit-code -- deploy
+
       - name: Version
         run: |
           dotnet tool restore
