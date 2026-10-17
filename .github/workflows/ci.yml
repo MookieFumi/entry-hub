@@ -121,6 +121,8 @@ jobs:
     # Starts PostgreSQL, the API and the reminders service the way the AppHost does, and tests the result.
     # GitHub-hosted Ubuntu runners come with Docker, which Aspire uses to run the PostgreSQL container.
     runs-on: ubuntu-latest
+    # A system that does not start must fail the job, not keep it running for the default six hours.
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7
@@ -134,5 +136,6 @@ jobs:
       - name: Test the whole system
         run: |
           dotnet restore --locked-mode
-          dotnet test tests/EntryHub.AppHost.Tests -c Release --no-restore --filter "Category=Aspire"
+          dotnet test tests/EntryHub.AppHost.Tests -c Release --no-restore --filter "Category=Aspire" \
+            --logger "console;verbosity=detailed" --blame-hang-timeout 8m
         working-directory: src

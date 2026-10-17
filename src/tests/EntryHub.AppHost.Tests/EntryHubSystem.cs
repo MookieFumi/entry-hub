@@ -2,6 +2,8 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
 
+using Microsoft.Extensions.DependencyInjection;
+
 namespace EntryHub.AppHost.Tests;
 
 /// <summary>
@@ -11,6 +13,7 @@ namespace EntryHub.AppHost.Tests;
 public sealed class EntryHubSystem : IAsyncLifetime
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromMinutes(3);
+    private static readonly TimeSpan DisposeTimeout = TimeSpan.FromMinutes(1);
 
     private DistributedApplication? _app;
 
@@ -28,11 +31,44 @@ public sealed class EntryHubSystem : IAsyncLifetime
         }
 
         _app = await builder.BuildAsync();
-        await _app.StartAsync();
 
+        // Every step is bounded: a system that does not come up must fail the run with its logs, not hang it.
         using var timeout = new CancellationTokenSource(StartupTimeout);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("api", timeout.Token);
-        await _app.ResourceNotifications.WaitForResourceAsync("reminders", KnownResourceStates.Running, timeout.Token);
+        try
+        {
+            await _app.StartAsync(timeout.Token);
+            await _app.ResourceNotifications.WaitForResourceHealthyAsync("api", timeout.Token);
+            await _app.ResourceNotifications.WaitForResourceAsync("reminders", KnownResourceStates.Running, timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            await DumpLogsAsync();
+            throw new TimeoutException($"The system did not start within {StartupTimeout}. The logs of its resources are above.");
+        }
+    }
+
+    private async Task DumpLogsAsync()
+    {
+        var logs = App.Services.GetRequiredService<ResourceLoggerService>();
+        foreach (var resource in new[] { "postgres", "api", "reminders" })
+        {
+            Console.WriteLine($"----- {resource} -----");
+            using var read = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            try
+            {
+                await foreach (var batch in logs.GetAllAsync(resource).WithCancellation(read.Token))
+                {
+                    foreach (var line in batch)
+                    {
+                        Console.WriteLine(line.Content);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // GetAllAsync keeps waiting for new lines, so a timeout simply means there is nothing more to read.
+            }
+        }
     }
 
     public HttpClient CreateApiClient(string subject, params string[] roles)
@@ -49,7 +85,8 @@ public sealed class EntryHubSystem : IAsyncLifetime
     {
         if (_app is not null)
         {
-            await _app.DisposeAsync();
+            // Stopping the containers can take a while but must not keep the run waiting forever.
+            await Task.WhenAny(_app.DisposeAsync().AsTask(), Task.Delay(DisposeTimeout));
         }
     }
 }
