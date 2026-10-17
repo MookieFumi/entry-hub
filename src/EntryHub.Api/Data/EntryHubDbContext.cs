@@ -1,3 +1,4 @@
+using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,12 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
 {
     public DbSet<Room> Rooms => Set<Room>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    public DbSet<Booking> Bookings => Set<Booking>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Needed so an exclusion constraint can combine equality on the room with overlap on the time range.
+        modelBuilder.HasPostgresExtension("btree_gist");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(EntryHubDbContext).Assembly);
+    }
 }

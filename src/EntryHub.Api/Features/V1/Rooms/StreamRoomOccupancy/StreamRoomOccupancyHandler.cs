@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 
 using EntryHub.Api.Data;
+using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 
 using Microsoft.EntityFrameworkCore;
@@ -32,8 +33,14 @@ public sealed class StreamRoomOccupancyHandler(
 
         do
         {
-            // Bookings arrive in a later change; until then a room is never busy.
-            yield return OccupancyCalculator.Calculate(roomId, [], clock.GetUtcNow());
+            var now = clock.GetUtcNow();
+
+            var busy = await db.Bookings.AsNoTracking()
+                .Where(booking => booking.RoomId == roomId && booking.Status == BookingStatus.Confirmed && booking.EndAt > now)
+                .Select(booking => new TimeRange(booking.StartAt, booking.EndAt))
+                .ToListAsync(cancellationToken);
+
+            yield return OccupancyCalculator.Calculate(roomId, busy, now);
         }
         while (await timer.WaitForNextTickAsync(cancellationToken));
     }

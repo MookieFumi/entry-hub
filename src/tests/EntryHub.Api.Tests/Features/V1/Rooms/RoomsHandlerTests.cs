@@ -1,3 +1,4 @@
+using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoom;
@@ -90,6 +91,7 @@ public class RoomsHandlerTests
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
         const int floor = HandlerListFloor;
+        await db.Bookings.Where(booking => db.Rooms.Any(room => room.Id == booking.RoomId && room.Floor == floor)).ExecuteDeleteAsync();
         await db.Rooms.Where(room => room.Floor == floor).ExecuteDeleteAsync();
         var create = new CreateRoomHandler(db, TimeProvider.System);
         foreach (var capacity in new[] { 4, 6, 10, 12 })
@@ -136,6 +138,38 @@ public class RoomsHandlerTests
 
         Assert.Equal(3, snapshots.Count);
         Assert.All(snapshots, snapshot => Assert.Equal(room.Id, snapshot.RoomId));
+    }
+
+    [Fact]
+    public async Task Stream_reports_the_room_as_occupied_while_a_confirmed_booking_runs()
+    {
+        await TestDatabase.EnsureMigratedAsync();
+        await using var db = TestDatabase.CreateContext();
+        var room = await new CreateRoomHandler(db, TimeProvider.System)
+            .HandleAsync(new CreateRoomRequest(UniqueName(), 1, 4, null), CancellationToken.None);
+        var start = TestClock.MondayMorning.AddMinutes(-30);
+        var end = TestClock.MondayMorning.AddMinutes(30);
+        db.Bookings.Add(new Booking
+        {
+            Id = Guid.CreateVersion7(),
+            RoomId = room!.Id,
+            OrganizerId = "ana",
+            Title = "Running now",
+            StartAt = start,
+            EndAt = end,
+            Attendees = 2,
+            CreatedAt = start,
+        });
+        await db.SaveChangesAsync();
+        var options = Options.Create(new StreamRoomOccupancyOptions { Interval = TimeSpan.FromMilliseconds(10) });
+        var handler = new StreamRoomOccupancyHandler(db, TestClock.Default, options);
+
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var stream = await handler.HandleAsync(room.Id, cancellation.Token);
+        var first = await stream!.FirstAsync(cancellation.Token);
+
+        Assert.Equal(RoomStatus.Occupied, first.Status);
+        Assert.Equal(end, first.NextChange);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

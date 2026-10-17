@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using EntryHub.Api.Data;
 using EntryHub.Api.Features.V1;
+using EntryHub.Api.Security;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddValidation();
-builder.Services.AddV1Features();
+builder.Services.AddEntryHubSecurity();
+builder.Services.AddV1Features(builder.Configuration);
 
 var app = builder.Build();
 
@@ -23,6 +25,9 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<EntryHubDbContext>().Database.MigrateAsync();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapV1Endpoints();
 
