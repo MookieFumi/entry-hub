@@ -3,6 +3,7 @@
 <p>
   <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?logo=git&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/MookieFumi/entry-hub?style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
 </p>
 <p>
@@ -157,3 +158,7 @@ dotnet reportgenerator "-reports:../TestResults/**/coverage.cobertura.xml" "-tar
 Commit messages and pull request titles use Conventional Commits and are written in English:
 `type(scope): description`, for example `feat(rooms): add room endpoints`.
 The hook is installed on the first `dotnet restore` in Debug. Set `HUSKY=0` to skip it.
+
+## License
+
+[MIT](LICENSE) © 2026 Miguel A. Martín Hrdez
