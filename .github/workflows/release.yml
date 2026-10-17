@@ -39,13 +39,18 @@ jobs:
           cp contracts/EntryHub.Api.json site/openapi.json
           cp docs/index.html site/index.html
 
-      - name: Create the release
+      - name: Attach the contract to the release
+        # The release may already exist (created from the GitHub UI together with the tag), so attach to it
+        # when it does and create it when the tag was pushed on its own.
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "$GITHUB_REF_NAME"
-          contracts/EntryHub.Api.json#openapi-v1.json
-          --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        run: |
+          cp contracts/EntryHub.Api.json openapi-v1.json
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" openapi-v1.json --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" openapi-v1.json --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi
 
       - uses: actions/upload-pages-artifact@v4
         with:
