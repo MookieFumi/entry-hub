@@ -46,6 +46,9 @@ namespace EntryHub.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<DateTimeOffset?>("ReminderSentAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 

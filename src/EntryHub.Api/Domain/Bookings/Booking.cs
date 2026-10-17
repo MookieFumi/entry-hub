@@ -27,4 +27,9 @@ public sealed class Booking
     public DateTimeOffset CreatedAt { get; init; }
 
     public DateTimeOffset? CancelledAt { get; set; }
+
+    /// <summary>
+    /// When the reminders service told the organizer that the booking is about to start; it is set once.
+    /// </summary>
+    public DateTimeOffset? ReminderSentAt { get; set; }
 }
