@@ -63,7 +63,7 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation })
+        catch (Exception exception) when (LostToAnotherBooking(exception))
         {
             // No overlap check in C#: the exclusion constraint of the database is the only judge, so two
             // simultaneous requests cannot both win.
@@ -71,5 +71,24 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         }
 
         return new CreateBookingResult.Created(BookingResponse.From(booking));
+    }
+
+    /// <summary>
+    /// The exclusion violation is the usual loser. With several inserts racing for the same slot PostgreSQL can
+    /// also pick one of them as the victim of a deadlock between their index checks. Both mean that another
+    /// booking took the slot, and EF wraps the second one in an <see cref="InvalidOperationException"/>
+    /// because Npgsql flags it as transient.
+    /// </summary>
+    private static bool LostToAnotherBooking(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation or PostgresErrorCodes.DeadlockDetected })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
