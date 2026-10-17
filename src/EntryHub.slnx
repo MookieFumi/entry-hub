@@ -2,5 +2,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/EntryHub.Api.Tests/EntryHub.Api.Tests.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/versioning/AspVersioning/AspVersioning.csproj" />
+    <Project Path="samples/versioning/MapGroupVersioning/MapGroupVersioning.csproj" />
+  </Folder>
   <Project Path="EntryHub.Api/EntryHub.Api.csproj" />
 </Solution>
