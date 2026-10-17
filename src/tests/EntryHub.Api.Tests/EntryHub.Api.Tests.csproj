@@ -6,10 +6,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The committed contract, next to the test assembly, so the contract test reads the file CI checks. -->
+    <Content Include="..\..\..\contracts\EntryHub.Api.json" Link="contracts\EntryHub.Api.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
