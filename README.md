@@ -146,6 +146,19 @@ so the contract is never public by accident. Open it to everyone on purpose by r
 The contract is also generated at build time into `contracts/EntryHub.Api.json` and committed. CI fails if an
 endpoint changes and that file does not, so every API change shows up in the pull request diff.
 
+To update it after changing an endpoint, build and commit the file:
+
+```bash
+cd src
+dotnet build        # rewrites ../contracts/EntryHub.Api.json from the code
+git add ../contracts/EntryHub.Api.json
+```
+
+The contract test (`Documentation/ContractTests.cs`) checks the other direction: it calls the running API and validates
+each response against the schema the contract declares for that operation, so an answer that drifts from the contract
+fails the build. It covers the successful responses of a few operations; the contract does not declare error
+responses yet.
+
 ## Releases
 
 Push a tag such as `v1.0.0` and the `release` workflow creates a GitHub Release with the contract attached
