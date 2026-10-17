@@ -53,9 +53,11 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: Governance checks
-        # dependency-review runs on pull requests because the repository is public.
-        # On a private repository it needs GitHub Advanced Security: pass dependency-review: "false".
+        # dependency-review needs the Dependency graph turned on in the repository settings
+        # (Settings > Security > Advanced Security). Remove the input to enable the check once it is on.
         uses: ./.github/actions/net-governance
+        with:
+          dependency-review: "false"
 
       - name: Version
         run: |
@@ -75,6 +77,7 @@ jobs:
         # Runs even when the tests fail, because that is when the report matters most.
         if: ${{ !cancelled() }}
         run: |
+          dotnet tool restore
           dotnet reportgenerator \
             "-reports:$RUNNER_TEMP/test-results/**/coverage.cobertura.xml" \
             "-targetdir:$RUNNER_TEMP/coverage" \
