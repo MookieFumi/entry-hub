@@ -1,3 +1,5 @@
+using Scalar.Aspire;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // PostgreSQL in a container, with a volume so the data survives restarts. The database name is the one the API
@@ -15,5 +17,9 @@ var api = builder.AddProject<Projects.EntryHub_Api>("api")
 builder.AddProject<Projects.EntryHub_Reminders>("reminders")
     .WithReference(database)
     .WaitFor(api);
+
+// One API reference for every service that publishes an OpenAPI document, opened from the dashboard.
+// Only the API does today; the reminders service has no HTTP endpoints.
+builder.AddScalarApiReference().WithApiReference(api);
 
 builder.Build().Run();

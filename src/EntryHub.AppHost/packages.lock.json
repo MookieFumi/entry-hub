@@ -81,6 +81,16 @@
           "YamlDotNet": "18.1.0"
         }
       },
+      "Scalar.Aspire": {
+        "type": "Direct",
+        "requested": "[0.12.0, )",
+        "resolved": "0.12.0",
+        "contentHash": "pzRrg1GLDubKu4s7GOj8WLtbj+apXFs97TGNBDhdNJsEYi/GXhpBEjBq5XcFRn1BO5CqSuxlgTw1EpBA3tJytw==",
+        "dependencies": {
+          "Aspire.Hosting": "13.2.1",
+          "MessagePack": "2.5.301"
+        }
+      },
       "Aspire.Hosting": {
         "type": "Transitive",
         "resolved": "13.6.1",
