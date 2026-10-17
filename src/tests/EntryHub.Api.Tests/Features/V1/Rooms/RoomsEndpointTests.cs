@@ -6,6 +6,7 @@ using System.Text.Json;
 using EntryHub.Api.Features.V1.Common;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
+using EntryHub.Api.Security;
 using EntryHub.Api.Tests.Support;
 
 using Microsoft.AspNetCore.Mvc;
@@ -14,23 +15,49 @@ using Microsoft.EntityFrameworkCore;
 namespace EntryHub.Api.Tests.Features.V1.Rooms;
 
 /// <summary>
-/// Layer 3: the whole HTTP pipeline (routing, validation, serialization) over the real database.
+/// Layer 3: the whole HTTP pipeline (routing, authorization, validation, serialization) over the real database.
 /// </summary>
 [Trait("Category", "Integration")]
 public class RoomsEndpointTests
 {
     private static string UniqueName() => $"Room {Guid.NewGuid():N}";
 
-    private static async Task<HttpClient> CreateClientAsync()
+    [Fact]
+    public async Task Anonymous_calls_get_401()
     {
-        await TestDatabase.EnsureMigratedAsync();
-        return new ApiFactory(TestDatabase.ConnectionString).CreateClient();
+        using var api = await TestApi.StartAsync();
+        using var client = api.Anonymous();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/rooms")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/rooms/" + Guid.CreateVersion7())).StatusCode);
+    }
+
+    [Fact]
+    public async Task An_employee_can_read_rooms_but_not_create_them()
+    {
+        using var api = await TestApi.StartAsync();
+        using var employee = api.ClientFor("ana", Roles.Employee);
+
+        Assert.Equal(HttpStatusCode.OK, (await employee.GetAsync("/api/v1/rooms")).StatusCode);
+
+        var create = await employee.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(UniqueName(), 2, 6, null));
+        Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_token_without_a_known_role_gets_403()
+    {
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("visitor");
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/rooms")).StatusCode);
     }
 
     [Fact]
     public async Task Post_creates_the_room_and_get_returns_it()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("fran", Roles.Facilities);
         var name = UniqueName();
 
         var created = await client.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(name, 2, 6, ["Projector"]));
@@ -46,7 +73,8 @@ public class RoomsEndpointTests
     [Fact]
     public async Task Post_with_a_taken_name_returns_409_problem_details()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("fran", Roles.Facilities);
         var request = new CreateRoomRequest(UniqueName(), 2, 6, null);
         await client.PostAsJsonAsync("/api/v1/rooms", request);
 
@@ -65,7 +93,8 @@ public class RoomsEndpointTests
     [InlineData("Valid", 101, 6)]
     public async Task Post_with_an_invalid_body_returns_400(string name, int floor, int capacity)
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("fran", Roles.Facilities);
 
         var response = await client.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(name, floor, capacity, null));
 
@@ -75,7 +104,8 @@ public class RoomsEndpointTests
     [Fact]
     public async Task Get_unknown_room_returns_404()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("ana", Roles.Employee);
 
         var response = await client.GetAsync($"/api/v1/rooms/{Guid.CreateVersion7()}");
 
@@ -85,10 +115,13 @@ public class RoomsEndpointTests
     [Fact]
     public async Task List_returns_a_page_with_the_total()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("fran", Roles.Facilities);
         const int floor = 91;
         await using (var db = TestDatabase.CreateContext())
         {
+            // Bookings point at rooms, so the ones of this floor go first.
+            await db.Bookings.Where(booking => db.Rooms.Any(room => room.Id == booking.RoomId && room.Floor == floor)).ExecuteDeleteAsync();
             await db.Rooms.Where(room => room.Floor == floor).ExecuteDeleteAsync();
         }
 
@@ -106,7 +139,8 @@ public class RoomsEndpointTests
     [Fact]
     public async Task Occupancy_streams_server_sent_events()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("fran", Roles.Facilities);
         var created = await client.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(UniqueName(), 1, 4, null));
         var room = await created.Content.ReadFromJsonAsync<RoomResponse>();
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -136,7 +170,8 @@ public class RoomsEndpointTests
     [Fact]
     public async Task Occupancy_of_unknown_room_returns_404()
     {
-        using var client = await CreateClientAsync();
+        using var api = await TestApi.StartAsync();
+        using var client = api.ClientFor("ana", Roles.Employee);
 
         var response = await client.GetAsync($"/api/v1/rooms/{Guid.CreateVersion7()}/occupancy");
 
