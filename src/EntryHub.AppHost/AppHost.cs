@@ -5,9 +5,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddPostgres("postgres").WithDataVolume();
 var database = postgres.AddDatabase("EntryHub", "entryhub");
 
-builder.AddProject<Projects.EntryHub_Api>("api")
+var api = builder.AddProject<Projects.EntryHub_Api>("api")
     .WithReference(database)
     .WaitFor(database)
     .WithHttpHealthCheck("/health");
+
+// The API applies the migrations when it starts, so the reminders service waits for it: the column it writes
+// exists only after that.
+builder.AddProject<Projects.EntryHub_Reminders>("reminders")
+    .WithReference(database)
+    .WaitFor(api);
 
 builder.Build().Run();
