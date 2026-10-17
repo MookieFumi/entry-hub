@@ -1,0 +1,36 @@
+<!-- src/Directory.Build.props: defaults shared by every project. A .csproj may override them only as a documented exception. -->
+<Project>
+  <PropertyGroup Label="Language">
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Metadata">
+    <Authors>MookieFumi</Authors>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Quality">
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Required for IDE0005 (unused usings) to run on build -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: public member without XML comment. Silenced so documenting everything is not mandatory -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Restore">
+    <!-- packages.lock.json files are committed; CI restores in locked mode -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="CI">
+    <IsCiBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</IsCiBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="CI warnings" Condition="'$(IsCiBuild)' == 'true'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

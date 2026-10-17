@@ -1,0 +1,73 @@
+# .github/actions/net-governance/action.yml
+name: net-governance
+description: Checks the governance rules of a .NET solution
+
+inputs:
+  working-directory:
+    description: Folder where the solution, Directory.Build.props and global.json live
+    default: src
+  solution:
+    description: Solution or project to run dotnet against. Leave empty if there is only one in working-directory
+    default: ""
+  fail-on-severity:
+    description: Minimum severity that makes dependency-review fail
+    default: moderate
+  check-format:
+    description: Run dotnet format --verify-no-changes
+    default: "true"
+  dependency-review:
+    description: Run dependency-review on pull requests
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Properties that must only live in Directory.Build.props
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if grep -rlE "<(TargetFramework|Nullable|LangVersion|TreatWarningsAsErrors)>" \
+             --include=*.csproj .; then
+          echo "::error::Common properties must be defined in Directory.Build.props"
+          exit 1
+        fi
+
+    - name: Restore (locked)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SOLUTION: ${{ inputs.solution }}
+      run: dotnet restore $SOLUTION --locked-mode
+
+    - name: Build
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SOLUTION: ${{ inputs.solution }}
+      run: dotnet build $SOLUTION --no-restore -c Release
+
+    - name: Format
+      if: inputs.check-format == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SOLUTION: ${{ inputs.solution }}
+      run: dotnet format $SOLUTION --verify-no-changes --no-restore
+
+    - name: Vulnerable packages (including transitive)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SOLUTION: ${{ inputs.solution }}
+      run: |
+        dotnet list $SOLUTION package --vulnerable --include-transitive --no-restore 2>&1 | tee "$RUNNER_TEMP/vulnerable.txt"
+        if grep -q "has the following vulnerable packages" "$RUNNER_TEMP/vulnerable.txt"; then
+          echo "::error::Vulnerable packages found"
+          exit 1
+        fi
+
+    - name: New dependencies in the PR
+      if: inputs.dependency-review == 'true' && github.event_name == 'pull_request'
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: ${{ inputs.fail-on-severity }}

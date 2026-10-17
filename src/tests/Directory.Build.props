@@ -1,0 +1,14 @@
+<!-- src/tests/Directory.Build.props: rules for test projects. -->
+<Project>
+  <!-- Without this import, src/Directory.Build.props is ignored for tests. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup Label="Tests">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup Label="Usings">
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

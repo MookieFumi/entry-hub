@@ -1,0 +1,9 @@
+# Semantic version derived from tags and history (GitHub flow).
+workflow: GitHubFlow/v1
+branches:
+  main:
+    mode: ContinuousDeployment
+# Conventional Commits: feat -> minor, fix and perf -> patch, "!" or BREAKING CHANGE -> major.
+major-version-bump-message: '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([\w\s-,/\\]*\))?(!:|:.*\n\n((.+\n)+\n)?BREAKING CHANGE:\s.+)'
+minor-version-bump-message: '^(feat)(\([\w\s-,/\\]*\))?:'
+patch-version-bump-message: '^(fix|perf)(\([\w\s-,/\\]*\))?:'

@@ -1,0 +1,9 @@
+<!-- src/Directory.Build.targets: build-time behavior shared by every project. -->
+<Project>
+  <!-- Installs the versioned Git hooks on restore. Skipped in CI, in Release and when HUSKY=0. -->
+  <Target Name="Husky" BeforeTargets="Restore;CollectPackageReferences"
+          Condition="'$(HUSKY)' != '0' And '$(CI)' != 'true' And '$(Configuration)' != 'Release' And Exists('$(MSBuildThisFileDirectory)../.git')">
+    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" />
+    <Exec Command="dotnet husky install" WorkingDirectory="$(MSBuildThisFileDirectory).." StandardOutputImportance="Low" StandardErrorImportance="High" />
+  </Target>
+</Project>
