@@ -9,7 +9,7 @@ namespace EntryHub.Api.Features.V1.Bookings.GetBooking;
 public static class GetBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/{id:guid}", HandleAsync).WithName("GetBooking");
+        group.MapGet("/{id:guid}", HandleAsync).WithName("GetBooking").WithSummary("Gets a booking by id.");
 
     private static async Task<Results<Ok<BookingResponse>, NotFound, ForbidHttpResult>> HandleAsync(
         Guid id,

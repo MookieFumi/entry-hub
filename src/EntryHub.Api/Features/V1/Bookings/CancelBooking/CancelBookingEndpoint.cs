@@ -9,7 +9,7 @@ namespace EntryHub.Api.Features.V1.Bookings.CancelBooking;
 public static class CancelBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapPost("/{id:guid}/cancel", HandleAsync).WithName("CancelBooking");
+        group.MapPost("/{id:guid}/cancel", HandleAsync).WithName("CancelBooking").WithSummary("Cancels a booking before it starts.");
 
     private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ProblemHttpResult>> HandleAsync(
         Guid id,

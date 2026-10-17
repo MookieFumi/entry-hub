@@ -9,7 +9,7 @@ namespace EntryHub.Api.Features.V1.Bookings.ListMyBookings;
 public static class ListMyBookingsEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/mine", HandleAsync).WithName("ListMyBookings");
+        group.MapGet("/mine", HandleAsync).WithName("ListMyBookings").WithSummary("Lists the caller's bookings, with paging.");
 
     private static async Task<Ok<PagedResponse<BookingResponse>>> HandleAsync(
         [AsParameters] ListMyBookingsQuery query,

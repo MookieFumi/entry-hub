@@ -7,7 +7,7 @@ namespace EntryHub.Api.Features.V1.Rooms.StreamRoomOccupancy;
 public static class StreamRoomOccupancyEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/{id:guid}/occupancy", HandleAsync).WithName("StreamRoomOccupancy");
+        group.MapGet("/{id:guid}/occupancy", HandleAsync).WithName("StreamRoomOccupancy").WithSummary("Live occupancy of a room as server-sent events.");
 
     private static async Task<Results<ServerSentEventsResult<RoomOccupancy>, NotFound>> HandleAsync(
         Guid id,

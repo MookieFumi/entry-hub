@@ -7,7 +7,7 @@ namespace EntryHub.Api.Features.V1.Rooms.ListRooms;
 public static class ListRoomsEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/", HandleAsync).WithName("ListRooms");
+        group.MapGet("/", HandleAsync).WithName("ListRooms").WithSummary("Lists rooms, optionally filtered, with paging.");
 
     private static async Task<Ok<PagedResponse<RoomResponse>>> HandleAsync(
         [AsParameters] ListRoomsQuery query,

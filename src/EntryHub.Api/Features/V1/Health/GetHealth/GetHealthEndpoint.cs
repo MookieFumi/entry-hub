@@ -5,7 +5,7 @@ namespace EntryHub.Api.Features.V1.Health.GetHealth;
 public static class GetHealthEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/health", HandleAsync).WithName("GetHealth");
+        group.MapGet("/health", HandleAsync).WithName("GetHealth").WithTags("Health").WithSummary("Reports whether the API and its database are reachable.");
 
     private static async Task<Results<Ok<GetHealthResponse>, JsonHttpResult<GetHealthResponse>>> HandleAsync(
         GetHealthHandler handler,
