@@ -2,6 +2,8 @@
 
 <p>
   <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://mookiefumi.github.io/entry-hub/"><img alt="API docs" src="https://img.shields.io/badge/API-docs-85EA2D?logo=swagger&amp;logoColor=black&amp;style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?logo=git&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/MookieFumi/entry-hub?style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
@@ -124,7 +126,7 @@ endpoint changes and that file does not, so every API change shows up in the pul
 
 Push a tag such as `v1.0.0` and the `release` workflow creates a GitHub Release with the contract attached
 (`openapi-v1.json`) and publishes the static docs of that version to GitHub Pages. Pages only ever shows the latest
-release; older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
+release (https://mookiefumi.github.io/entry-hub/); older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
 
 ## Tests
 
