@@ -35,7 +35,8 @@ src/
   Directory.Build.props      shared build properties and quality rules
   Directory.Packages.props   Central Package Management: one version per package
   EntryHub.Api/              Minimal API organized by vertical slices (Features/V1/...)
-  EntryHub.AppHost/          Aspire AppHost: PostgreSQL, the API and the dashboard
+  EntryHub.Reminders/        worker that reminds organizers shortly before their booking starts
+  EntryHub.AppHost/          Aspire AppHost: PostgreSQL, the API, the reminders service and the dashboard
   EntryHub.ServiceDefaults/  telemetry, health checks and resilience shared by the services
   tests/EntryHub.Api.Tests/  unit, handler and endpoint tests
 .github/                     workflows, composite governance action, Dependabot, CODEOWNERS
@@ -96,6 +97,11 @@ curl http://localhost:5178/api/v1/health
 
 With the [Aspire CLI](https://aspire.dev/get-started/install-cli/) installed, `aspire run` from the repository root does
 the same.
+
+The reminders service starts after the API (the API creates the schema) and looks every 30 seconds for confirmed
+bookings that start within 15 minutes. Each one produces a log line, "Reminder for ana: ... starts at ...", that you
+see in the dashboard under the `reminders` resource. Both values are settings under `Reminders` (`LeadTime`,
+`PollInterval`). A booking is reminded once, even with several copies of the service running.
 
 In Development the API also serves `/health` (PostgreSQL included) and `/alive`, which the AppHost uses to know when
 the API is ready. They are not mapped in other environments.
