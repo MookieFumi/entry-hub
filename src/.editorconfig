@@ -393,3 +393,7 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 dotnet_diagnostic.IDE0005.severity = warning
 # Formatting (spaces, indentation, line breaks)
 dotnet_diagnostic.IDE0055.severity = warning
+
+# EF Core migrations are generated; they are reviewed but not style-checked.
+[**/Migrations/*.cs]
+generated_code = true
