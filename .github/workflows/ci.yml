@@ -41,7 +41,7 @@ jobs:
           # GitVersion needs the full history and the tags
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: src/global.json
           cache: true
