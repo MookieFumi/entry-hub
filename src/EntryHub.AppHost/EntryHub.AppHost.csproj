@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Scalar.Aspire" />
     <ProjectReference Include="..\EntryHub.Api\EntryHub.Api.csproj" />
     <ProjectReference Include="..\EntryHub.Reminders\EntryHub.Reminders.csproj" />
   </ItemGroup>

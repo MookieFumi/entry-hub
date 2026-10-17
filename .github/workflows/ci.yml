@@ -70,8 +70,10 @@ jobs:
           dotnet gitversion /output json | tee "$RUNNER_TEMP/gitversion.json"
 
       - name: Test
+        # The tests that start the whole system with Aspire need containers and run in the aspire job.
         run: >
           dotnet test --no-build -c Release
+          --filter "Category!=Aspire"
           --settings tests/coverage.runsettings
           --collect:"XPlat Code Coverage"
           --logger "trx;LogFileName=test-results.trx"
@@ -114,3 +116,23 @@ jobs:
           else
             gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -F body=@"$RUNNER_TEMP/comment.md"
           fi
+
+  aspire:
+    # Starts PostgreSQL, the API and the reminders service the way the AppHost does, and tests the result.
+    # GitHub-hosted Ubuntu runners come with Docker, which Aspire uses to run the PostgreSQL container.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Test the whole system
+        run: |
+          dotnet restore --locked-mode
+          dotnet test tests/EntryHub.AppHost.Tests -c Release --no-restore --filter "Category=Aspire"
+        working-directory: src

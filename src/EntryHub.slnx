@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/tests/">
     <Project Path="tests/EntryHub.Api.Tests/EntryHub.Api.Tests.csproj" />
+    <Project Path="tests/EntryHub.AppHost.Tests/EntryHub.AppHost.Tests.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/versioning/AspVersioning/AspVersioning.csproj" />
