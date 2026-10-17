@@ -1,0 +1,16 @@
+# Governance files: changes need a review from their owners.
+
+/src/Directory.Build.props        @MookieFumi
+/src/Directory.Build.targets      @MookieFumi
+/src/tests/Directory.Build.props  @MookieFumi
+/src/Directory.Packages.props     @MookieFumi
+/src/nuget.config                 @MookieFumi
+/src/.editorconfig                @MookieFumi
+/src/global.json                  @MookieFumi
+/GitVersion.yml                   @MookieFumi
+/.config/dotnet-tools.json        @MookieFumi
+/.husky/                          @MookieFumi
+/.github/dependabot.yml           @MookieFumi
+/.github/workflows/               @MookieFumi
+/.github/actions/                 @MookieFumi
+/.github/CODEOWNERS               @MookieFumi

@@ -1,0 +1,64 @@
+# .github/workflows/ci.yml
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: entryhub
+          POSTGRES_PASSWORD: entryhub
+          POSTGRES_DB: entryhub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U entryhub -d entryhub"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      ENTRYHUB_TEST_CONNECTION: Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # GitVersion needs the full history and the tags
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Governance checks
+        # dependency-review needs GitHub Advanced Security on private repositories.
+        # Turn it on when the repository is public or has that feature.
+        uses: ./.github/actions/net-governance
+        with:
+          dependency-review: "false"
+
+      - name: Version
+        run: |
+          dotnet tool restore
+          dotnet gitversion /showvariable FullSemVer
+
+      - name: Test
+        run: dotnet test --no-build -c Release
+        working-directory: src
