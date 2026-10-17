@@ -46,6 +46,15 @@
         "resolved": "4.0.1",
         "contentHash": "8CoAaZkniVekR1ycJyxn+hOz+6ZQCDPcoIsIs6ujd4WyFcBMlxGNU15Qb8Uxd4iO4UmOuETb0M6vzBbwX/mfLA=="
       },
+      "AspNetCore.HealthChecks.NpgSql": {
+        "type": "Transitive",
+        "resolved": "9.0.0",
+        "contentHash": "npc58/AD5zuVxERdhCl2Kb7WnL37mwX42SJcXIwvmEig0/dugOLg3SIwtfvvh3TnvTwR/sk5LYNkkPaBdks61A==",
+        "dependencies": {
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "8.0.11",
+          "Npgsql": "8.0.3"
+        }
+      },
       "Humanizer.Core": {
         "type": "Transitive",
         "resolved": "2.14.1",
@@ -898,6 +907,13 @@
           "Scalar.AspNetCore": "[2.18.0, )"
         }
       },
+      "entryhub.reminders": {
+        "type": "Project",
+        "dependencies": {
+          "Aspire.Npgsql": "[13.6.1, )",
+          "EntryHub.ServiceDefaults": "[1.0.0, )"
+        }
+      },
       "entryhub.servicedefaults": {
         "type": "Project",
         "dependencies": {
@@ -908,6 +924,28 @@
           "OpenTelemetry.Instrumentation.AspNetCore": "[1.17.0, )",
           "OpenTelemetry.Instrumentation.Http": "[1.17.0, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.17.0, )"
+        }
+      },
+      "Aspire.Npgsql": {
+        "type": "CentralTransitive",
+        "requested": "[13.6.1, )",
+        "resolved": "13.6.1",
+        "contentHash": "xzg7iLuQFwNdDYZZPjbz0D43kSyNPPyukaE0SIMh6mwl900UNikyVguNcT91bKWzFCMjxctDMZ98Z4Ic0Y/ujg==",
+        "dependencies": {
+          "AspNetCore.HealthChecks.NpgSql": "9.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.12",
+          "Microsoft.Extensions.Configuration.EnvironmentVariables": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "10.0.12",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Logging": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Options": "10.0.12",
+          "Microsoft.Extensions.Primitives": "10.0.12",
+          "Npgsql.DependencyInjection": "10.0.3",
+          "Npgsql.OpenTelemetry": "10.0.3",
+          "OpenTelemetry.Extensions.Hosting": "1.17.0"
         }
       },
       "Aspire.Npgsql.EntityFrameworkCore.PostgreSQL": {

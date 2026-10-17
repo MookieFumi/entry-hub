@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Npgsql" Version="13.6.1" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.1" />
     <PackageVersion Include="Asp.Versioning.Http" Version="10.2.3" />
     <!-- Transitive through Aspire.Hosting; pinned to the patched release (GHSA-qhrr-8q5h-9q3h). Remove when Aspire ships it. -->

@@ -52,7 +52,7 @@ jobs:
             gh release create "$GITHUB_REF_NAME" openapi-v1.json --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
           fi
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -67,4 +67,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

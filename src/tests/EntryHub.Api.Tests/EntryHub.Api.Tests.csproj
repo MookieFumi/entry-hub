@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\EntryHub.Api\EntryHub.Api.csproj" />
+    <ProjectReference Include="..\..\EntryHub.Reminders\EntryHub.Reminders.csproj" />
   </ItemGroup>
 
   <ItemGroup>
