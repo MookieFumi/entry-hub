@@ -17,6 +17,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      # Lets the report step create and update its single comment on the pull request.
+      pull-requests: write
+
     services:
       postgres:
         image: postgres:17-alpine
@@ -48,17 +53,56 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: Governance checks
-        # dependency-review needs GitHub Advanced Security on private repositories.
-        # Turn it on when the repository is public or has that feature.
+        # dependency-review runs on pull requests because the repository is public.
+        # On a private repository it needs GitHub Advanced Security: pass dependency-review: "false".
         uses: ./.github/actions/net-governance
-        with:
-          dependency-review: "false"
 
       - name: Version
         run: |
           dotnet tool restore
-          dotnet gitversion /showvariable FullSemVer
+          dotnet gitversion /output json | tee "$RUNNER_TEMP/gitversion.json"
 
       - name: Test
-        run: dotnet test --no-build -c Release
+        run: >
+          dotnet test --no-build -c Release
+          --settings tests/coverage.runsettings
+          --collect:"XPlat Code Coverage"
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory "$RUNNER_TEMP/test-results"
         working-directory: src
+
+      - name: Report
+        # Runs even when the tests fail, because that is when the report matters most.
+        if: ${{ !cancelled() }}
+        run: |
+          dotnet reportgenerator \
+            "-reports:$RUNNER_TEMP/test-results/**/coverage.cobertura.xml" \
+            "-targetdir:$RUNNER_TEMP/coverage" \
+            "-reporttypes:MarkdownSummaryGithub" || true
+          python3 .github/scripts/ci-report.py \
+            "$RUNNER_TEMP/gitversion.json" \
+            "$RUNNER_TEMP/test-results/test-results.trx" \
+            "$RUNNER_TEMP/coverage/SummaryGithub.md" > "$RUNNER_TEMP/report.md"
+          cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on the pull request
+        # One comment per pull request, updated on every push. It is skipped when the token cannot write:
+        # pull requests from forks and from Dependabot.
+        if: >-
+          ${{ !cancelled()
+          && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && github.actor != 'dependabot[bot]' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          marker="<!-- entry-hub-ci-report -->"
+          { echo "$marker"; echo "## CI report"; echo; cat "$RUNNER_TEMP/report.md"; } > "$RUNNER_TEMP/comment.md"
+          comment_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq "[.[] | select(.body | contains(\"$marker\"))][0].id // empty")
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment_id" -F body=@"$RUNNER_TEMP/comment.md"
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -F body=@"$RUNNER_TEMP/comment.md"
+          fi

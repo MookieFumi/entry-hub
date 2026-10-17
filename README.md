@@ -1,10 +1,15 @@
 # entry-hub
 
+[![ci](https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
+
 Room booking API used as the demo project for the blog series about Minimal APIs, OpenAPI and Aspire.
 Each post links to the code of the pull request that backs it.
 
-The domain (rooms and bookings) arrives feature by feature. This first version only contains the foundation:
-a versioned API (`/api/v1`), PostgreSQL, tests and the governance rules.
+The domain is room booking: rooms, bookings with business rules, JWT roles and a live occupancy stream.
+It grows pull request by pull request, one feature per post.
 
 ## Layout
 
@@ -100,6 +105,29 @@ Each slice is tested in three layers: pure logic (no I/O), the handler against P
 
 Handler and endpoint tests need a PostgreSQL. By default they use the one from Docker Compose.
 Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container).
+
+## What CI reports on each pull request
+
+Every run of the `ci` workflow writes a report to its summary page, and on pull requests it keeps a single
+comment up to date (it is edited on each push, never duplicated):
+
+- **Version:** what GitVersion calculates for that branch, so a `feat` or a `fix` shows its effect before the merge.
+- **Tests:** total, passed, failed and skipped, and the name of every failing test.
+- **Coverage:** line and branch coverage of `EntryHub.Api` and a table per class. Generated EF Core migrations are
+  left out (see `src/tests/coverage.runsettings`).
+
+The coverage comes from `coverlet.collector` and the report from ReportGenerator, both open source and run inside the
+workflow, so no external service or token is needed. A coverage badge would need one (Codecov or a gist); it is not
+set up.
+
+To get the same numbers locally:
+
+```bash
+cd src
+dotnet test --settings tests/coverage.runsettings --collect:"XPlat Code Coverage" --results-directory ../TestResults
+dotnet tool restore
+dotnet reportgenerator "-reports:../TestResults/**/coverage.cobertura.xml" "-targetdir:../TestResults/report" "-reporttypes:Html"
+```
 
 ## Governance
 
