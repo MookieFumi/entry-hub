@@ -9,8 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 builder.Services.AddDbContext<EntryHubDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("EntryHub")));
+
+// Adds Npgsql tracing, metrics and a health check. Retries stay off: CreateBookingHandler already decides what
+// a deadlock between two simultaneous bookings means, and a silent retry would hide it.
+builder.EnrichNpgsqlDbContext<EntryHubDbContext>(settings => settings.DisableRetry = true);
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton(TimeProvider.System);
@@ -31,6 +37,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapDefaultEndpoints();
 app.MapV1Endpoints();
 app.MapEntryHubDocumentation();
 

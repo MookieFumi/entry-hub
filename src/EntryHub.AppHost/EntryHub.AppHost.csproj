@@ -1,0 +1,13 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <ProjectReference Include="..\EntryHub.Api\EntryHub.Api.csproj" />
+  </ItemGroup>
+
+</Project>

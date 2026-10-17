@@ -7,4 +7,6 @@
     <Project Path="samples/versioning/MapGroupVersioning/MapGroupVersioning.csproj" />
   </Folder>
   <Project Path="EntryHub.Api/EntryHub.Api.csproj" />
+  <Project Path="EntryHub.AppHost/EntryHub.AppHost.csproj" />
+  <Project Path="EntryHub.ServiceDefaults/EntryHub.ServiceDefaults.csproj" />
 </Solution>
