@@ -36,7 +36,7 @@ jobs:
       ENTRYHUB_TEST_CONNECTION: Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # GitVersion needs the full history and the tags
           fetch-depth: 0
