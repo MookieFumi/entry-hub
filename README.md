@@ -1,9 +1,22 @@
 # entry-hub
 
-[![ci](https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml)
-![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
-![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
+<p>
+  <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?logo=git&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
+</p>
+<p>
+  <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
+  <img alt="ASP.NET Core Minimal APIs" src="https://img.shields.io/badge/ASP.NET%20Core-Minimal%20APIs-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
+  <img alt="EF Core 10" src="https://img.shields.io/badge/EF%20Core-10-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
+  <img alt="PostgreSQL 17" src="https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&amp;logoColor=white&amp;style=flat-square">
+  <img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&amp;logoColor=white&amp;style=flat-square">
+</p>
+<p>
+  <a href="https://www.conventionalcommits.org"><img alt="Conventional Commits" src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://semver.org"><img alt="SemVer with GitVersion" src="https://img.shields.io/badge/SemVer-GitVersion-blue?logo=semver&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/blob/main/.github/dependabot.yml"><img alt="Dependabot" src="https://img.shields.io/badge/Dependabot-enabled-025E8C?logo=dependabot&amp;logoColor=white&amp;style=flat-square"></a>
+</p>
 
 Room booking API used as the demo project for the blog series about Minimal APIs, OpenAPI and Aspire.
 Each post links to the code of the pull request that backs it.
