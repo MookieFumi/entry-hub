@@ -39,6 +39,7 @@ src/
   EntryHub.AppHost/          Aspire AppHost: PostgreSQL, the API, the reminders service and the dashboard
   EntryHub.ServiceDefaults/  telemetry, health checks and resilience shared by the services
   tests/EntryHub.Api.Tests/  unit, handler and endpoint tests
+  tests/EntryHub.AppHost.Tests/  tests that start the whole system with Aspire (need containers)
 .github/                     workflows, composite governance action, Dependabot, CODEOWNERS
 .husky/                      Git hook that validates Conventional Commits
 GitVersion.yml               semantic version derived from tags and history
@@ -103,6 +104,9 @@ bookings that start within 15 minutes. Each one produces a log line, "Reminder f
 see in the dashboard under the `reminders` resource. Both values are settings under `Reminders` (`LeadTime`,
 `PollInterval`). A booking is reminded once, even with several copies of the service running.
 
+The dashboard also lists a `scalar-api-reference` resource: one API reference for the services of the application that
+publish an OpenAPI document, which today is only the API.
+
 In Development the API also serves `/health` (PostgreSQL included) and `/alive`, which the AppHost uses to know when
 the API is ready. They are not mapped in other environments.
 
@@ -166,8 +170,16 @@ docker run -d --name entryhub-test-db -p 5432:5432 -e POSTGRES_USER=entryhub -e 
   -e POSTGRES_DB=entryhub postgres:17-alpine
 ```
 
-Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container). A later pull
-request makes the tests start their own PostgreSQL through Aspire.
+Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container).
+
+The tests in `tests/EntryHub.AppHost.Tests` start the whole system the way the AppHost does (PostgreSQL in a
+container, the API and the reminders service), so they need a container runtime and no PostgreSQL of your own. They
+carry the trait `Category=Aspire`, and the `build` job leaves them out because the `aspire` job runs them:
+
+```bash
+dotnet test tests/EntryHub.AppHost.Tests              # only the whole-system tests
+dotnet test --filter "Category!=Aspire"               # everything else
+```
 
 ## What CI reports on each pull request
 
