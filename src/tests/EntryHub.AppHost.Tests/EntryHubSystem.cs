@@ -73,7 +73,7 @@ public sealed class EntryHubSystem : IAsyncLifetime
 
     public HttpClient CreateApiClient(string subject, params string[] roles)
     {
-        var client = App.CreateHttpClient("api");
+        var client = App.CreateHttpClient("api", "http");
         client.DefaultRequestHeaders.Authorization = new("Bearer", Tokens.Create(subject, roles));
         return client;
     }

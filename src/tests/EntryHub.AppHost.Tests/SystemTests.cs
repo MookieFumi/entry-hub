@@ -44,7 +44,7 @@ public class SystemTests(EntryHubSystem system)
     [Fact]
     public async Task The_api_rejects_requests_without_a_token()
     {
-        using var anonymous = system.App.CreateHttpClient("api");
+        using var anonymous = system.App.CreateHttpClient("api", "http");
 
         var response = await anonymous.GetAsync("/api/v1/rooms");
 

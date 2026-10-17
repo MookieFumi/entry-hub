@@ -10,7 +10,9 @@ var database = postgres.AddDatabase("EntryHub", "entryhub");
 var api = builder.AddProject<Projects.EntryHub_Api>("api")
     .WithReference(database)
     .WaitFor(database)
-    .WithHttpHealthCheck("/health");
+    // Over plain HTTP on purpose: the HTTPS endpoint uses the ASP.NET Core development certificate, which a
+    // machine without it trusted (CI, a fresh container) rejects, and the API would never be reported healthy.
+    .WithHttpHealthCheck("/health", endpointName: "http");
 
 // The API applies the migrations when it starts, so the reminders service waits for it: the column it writes
 // exists only after that.
