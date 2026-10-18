@@ -60,6 +60,22 @@ public class OpenApiEndpointTests
     }
 
     [Fact]
+    public async Task Describes_the_platform_probes_next_to_the_versioned_health_endpoint()
+    {
+        using var api = await TestApi.StartAsync();
+
+        var json = await api.ClientFor("fran", Roles.Facilities).GetStringAsync("/openapi/v1.json", CancellationToken.None);
+
+        using var document = JsonDocument.Parse(json);
+        var paths = document.RootElement.GetProperty("paths");
+        Assert.True(paths.GetProperty("/health").GetProperty("get").GetProperty("responses").TryGetProperty("503", out _));
+        Assert.True(paths.GetProperty("/alive").GetProperty("get").GetProperty("responses").TryGetProperty("200", out _));
+        Assert.False(paths.GetProperty("/health").GetProperty("get").TryGetProperty("security", out _));
+        Assert.Contains("/api/v1/health", document.RootElement.GetProperty("tags").EnumerateArray()
+            .Single(tag => tag.GetProperty("name").GetString() == "Probes").GetProperty("description").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Does_not_serve_the_interactive_page_outside_development()
     {
         using var api = await TestApi.StartAsync();

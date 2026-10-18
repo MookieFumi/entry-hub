@@ -12,6 +12,7 @@
           "Health"
         ],
         "summary": "Reports whether the API and its database are reachable.",
+        "description": "Readiness for clients, as JSON. Kubernetes and the Aspire AppHost do not call this one: they use /health (readiness) and /alive (liveness), described under the Probes tag, which sit outside the versioned API and answer plain text.",
         "operationId": "GetHealth",
         "responses": {
           "200": {
@@ -390,6 +391,68 @@
             "Bearer": [ ]
           }
         ]
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Probes"
+        ],
+        "summary": "Readiness probe: every health check passes, PostgreSQL included.",
+        "operationId": "GetReadiness",
+        "responses": {
+          "200": {
+            "description": "Healthy",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unhealthy: a check failed, usually because PostgreSQL does not answer. Kubernetes stops sending traffic to the pod.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alive": {
+      "get": {
+        "tags": [
+          "Probes"
+        ],
+        "summary": "Liveness probe: the process responds.",
+        "operationId": "GetLiveness",
+        "responses": {
+          "200": {
+            "description": "Healthy",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unhealthy: the process is not responding. Kubernetes restarts the pod.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -779,6 +842,10 @@
     },
     {
       "name": "Bookings"
+    },
+    {
+      "name": "Probes",
+      "description": "For Kubernetes and the Aspire AppHost, not for clients. /health is readiness: every check must pass, PostgreSQL included, and Kubernetes holds traffic back until it does. /alive is liveness: it only says the process responds, with no dependencies, and Kubernetes restarts the pod when it fails. A database outage must not restart the pods, which is why the two are separate. GET /api/v1/health is the same readiness question for clients: it answers JSON, belongs to the versioned API and is part of the contract."
     }
   ]
 }
