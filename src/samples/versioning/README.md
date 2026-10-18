@@ -7,7 +7,7 @@ Neither project touches `EntryHub.Api`, which uses plain route groups under `/ap
 |---|---|---|
 | Packages | none | `Asp.Versioning.Http` |
 | Version in the URL | `MapGroup("/api/v1")` | `MapGroup("/api/v{version:apiVersion}")` |
-| Which version is deprecated | nowhere, it is a convention | `HasDeprecatedApiVersion` |
+| Which version is deprecated | only in the OpenAPI document, with an operation transformer (see below) | `HasDeprecatedApiVersion`, also in the responses |
 | Headers `api-supported-versions` and `api-deprecated-versions` | you write them | `ReportApiVersions = true` |
 | Other ways to read the version (header, query string) | not available | `ApiVersionReader` |
 | One OpenAPI document per version | one `AddOpenApi("v1")`, `AddOpenApi("v2")` and a route filter per document | the same, plus `Asp.Versioning.Mvc.ApiExplorer` to tell the documents which endpoints belong to which version |
