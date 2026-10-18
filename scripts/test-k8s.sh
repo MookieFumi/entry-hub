@@ -38,7 +38,6 @@ signing_key="$(openssl rand -base64 32)"
 issuer="entryhub-k8s-test"
 audience="entryhub-api"
 
-# --wait holds until the API passes its readiness probe, which checks PostgreSQL too.
 helm upgrade --install entry-hub "$root/deploy/k8s" --wait --timeout 5m \
   --set parameters.api.api_image="entryhub-api:$tag" \
   --set parameters.reminders.reminders_image="entryhub-reminders:$tag" \
@@ -48,7 +47,11 @@ helm upgrade --install entry-hub "$root/deploy/k8s" --wait --timeout 5m \
   --set secrets.api.jwt_signing_key="$signing_key" \
   --set config.api.jwt_issuer="$issuer" \
   --set config.api.jwt_audience="$audience"
-kubectl rollout status deployment/reminders-deployment --timeout 2m
+# helm --wait is not enough: the chart's Deployments run one replica with maxUnavailable: 1, so Helm counts them
+# ready with no pod ready at all. Wait for the pods themselves; the API's readiness probe checks PostgreSQL too.
+kubectl wait pod -l app.kubernetes.io/component=api --for condition=Ready --timeout 3m
+kubectl wait pod -l app.kubernetes.io/component=reminders --for condition=Ready --timeout 2m
+# The API exits when PostgreSQL is not accepting connections yet, so a few restarts are expected here.
 kubectl get pods
 
 kubectl port-forward service/api-service "$port:8080" >/dev/null 2>&1 &
@@ -56,6 +59,7 @@ forward=$!
 trap 'kill $forward 2>/dev/null || true' EXIT
 for _ in $(seq 30); do
   curl -sf "http://localhost:$port/alive" >/dev/null && break
+  kill -0 "$forward" 2>/dev/null || { echo "kubectl port-forward exited."; false; }
   sleep 1
 done
 
