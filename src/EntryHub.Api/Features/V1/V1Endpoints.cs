@@ -11,7 +11,6 @@ public static class V1Endpoints
 {
     public static IServiceCollection AddV1Features(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped<GetHealthHandler>();
         services.AddRoomsFeature();
         services.AddBookingsFeature(configuration);
 

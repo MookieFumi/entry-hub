@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using EntryHub.Api.Data;
 using EntryHub.Api.Documentation;
+using EntryHub.Api.Features;
 using EntryHub.Api.Features.V1;
 using EntryHub.Api.Security;
 
@@ -23,6 +24,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddValidation();
 builder.Services.AddEntryHubSecurity();
 builder.Services.AddEntryHubOpenApi();
+builder.Services.AddFeatureHandlers();
 builder.Services.AddV1Features(builder.Configuration);
 
 var app = builder.Build();

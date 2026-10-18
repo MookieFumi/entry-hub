@@ -10,10 +10,6 @@ public static class RoomsEndpoints
 {
     public static IServiceCollection AddRoomsFeature(this IServiceCollection services)
     {
-        services.AddScoped<CreateRoomHandler>();
-        services.AddScoped<GetRoomHandler>();
-        services.AddScoped<ListRoomsHandler>();
-        services.AddScoped<StreamRoomOccupancyHandler>();
         services.AddOptions<StreamRoomOccupancyOptions>();
 
         return services;
