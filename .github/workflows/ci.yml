@@ -22,23 +22,7 @@ jobs:
       # Lets the report step create and update its single comment on the pull request.
       pull-requests: write
 
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: entryhub
-          POSTGRES_PASSWORD: entryhub
-          POSTGRES_DB: entryhub
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U entryhub -d entryhub"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-
-    env:
-      ENTRYHUB_TEST_CONNECTION: Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub
+    # The API tests start their own PostgreSQL with Testcontainers, on the Docker that GitHub-hosted Ubuntu runners have.
 
     steps:
       - uses: actions/checkout@v7
@@ -75,6 +59,11 @@ jobs:
         run: |
           dotnet tool restore
           dotnet gitversion /output json | tee "$RUNNER_TEMP/gitversion.json"
+
+      - name: Docker
+        # The API tests start their PostgreSQL with Testcontainers. Fails here, with a clear message, when the runner
+        # has no Docker that runs Linux containers.
+        run: scripts/check-docker.sh
 
       - name: Test
         # The tests that start the whole system with Aspire need containers and run in the aspire job.
@@ -139,6 +128,9 @@ jobs:
           global-json-file: src/global.json
           cache: true
           cache-dependency-path: "**/packages.lock.json"
+
+      - name: Docker
+        run: scripts/check-docker.sh
 
       - name: Test the whole system
         run: |

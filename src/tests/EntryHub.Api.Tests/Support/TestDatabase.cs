@@ -2,21 +2,27 @@ using EntryHub.Api.Data;
 
 using Microsoft.EntityFrameworkCore;
 
+using Testcontainers.PostgreSql;
+
 namespace EntryHub.Api.Tests.Support;
 
 /// <summary>
 /// Connection settings of the PostgreSQL used by integration tests.
-/// The default is a PostgreSQL on localhost with the user, password and database <c>entryhub</c>; CI and other machines set <c>ENTRYHUB_TEST_CONNECTION</c>.
+/// By default the first test that needs it starts a PostgreSQL container with Testcontainers, shared by the whole run;
+/// Testcontainers removes it when the run ends. Set <c>ENTRYHUB_TEST_CONNECTION</c> to use a PostgreSQL of your own
+/// instead, on a machine without Docker for example.
 /// </summary>
 internal static class TestDatabase
 {
     private const string EnvironmentVariable = "ENTRYHUB_TEST_CONNECTION";
 
-    private const string LocalDefault =
-        "Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub";
+    // The image the CI service container used before these tests started their own.
+    private const string Image = "postgres:17-alpine";
 
-    public static string ConnectionString =>
-        Environment.GetEnvironmentVariable(EnvironmentVariable) ?? LocalDefault;
+    private static readonly Lazy<string> Connection = new(() =>
+        Environment.GetEnvironmentVariable(EnvironmentVariable) ?? StartContainer());
+
+    public static string ConnectionString => Connection.Value;
 
     /// <summary>
     /// A connection string that points to a port nobody listens on, with a short timeout.
@@ -38,6 +44,19 @@ internal static class TestDatabase
             .Options;
 
         return new EntryHubDbContext(options);
+    }
+
+    private static string StartContainer()
+    {
+        var container = new PostgreSqlBuilder(Image)
+            .WithDatabase("entryhub")
+            .WithUsername("entryhub")
+            .WithPassword("entryhub")
+            .Build();
+
+        // Lazy<T> needs a synchronous factory. It runs once per test run, before any test touches the database.
+        container.StartAsync().GetAwaiter().GetResult();
+        return container.GetConnectionString();
     }
 
     private static async Task MigrateAsync()
