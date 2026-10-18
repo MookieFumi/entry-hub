@@ -22,3 +22,15 @@ internal static class BookingProblems
             detail: "Another confirmed booking of this room overlaps the requested time.",
             statusCode: StatusCodes.Status409Conflict);
 }
+
+// Only for the contract: BookingProblems.RulesBroken writes these same fields, so clients learn about "violations".
+
+/// <summary>
+/// A booking that breaks one or more booking rules.
+/// </summary>
+/// <param name="Type">A URI that identifies the kind of problem.</param>
+/// <param name="Title">A short summary of the problem.</param>
+/// <param name="Status">Always 422.</param>
+/// <param name="Detail">The messages of the broken rules, joined.</param>
+/// <param name="Violations">Every rule the booking breaks, with a stable code.</param>
+public sealed record RulesBrokenProblem(string Type, string Title, int Status, string Detail, IReadOnlyList<RuleViolation> Violations);

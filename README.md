@@ -170,8 +170,13 @@ git add ../contracts/EntryHub.Api.json
 
 The contract test (`Documentation/ContractTests.cs`) checks the other direction: it calls the running API and validates
 each response against the schema the contract declares for that operation, so an answer that drifts from the contract
-fails the build. It covers the successful responses of a few operations; the contract does not declare error
-responses yet.
+fails the build. It covers successful responses and the errors the contract declares: 404, the 409 of a repeated room
+name or an overlapping booking, and the 422 of a booking that breaks the rules, with its `violations`. An endpoint
+declares an error that its return type cannot describe with `ProducesProblem` or `Produces<T>`; an answer whose status
+the contract does not declare fails the test too.
+
+The 400 of the built-in validation is not declared yet: without `AddProblemDetails()` it is served as
+`application/json` with no `type` or `status`, so it is left for the change that adds `AddProblemDetails()`.
 
 ## Deploy to Kubernetes
 
