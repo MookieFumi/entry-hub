@@ -47,11 +47,11 @@ helm upgrade --install entry-hub "$root/deploy/k8s" --wait --timeout 5m \
   --set secrets.api.jwt_signing_key="$signing_key" \
   --set config.api.jwt_issuer="$issuer" \
   --set config.api.jwt_audience="$audience"
-# helm --wait is not enough: the chart's Deployments run one replica with maxUnavailable: 1, so Helm counts them
-# ready with no pod ready at all. Wait for the pods themselves; the API's readiness probe checks PostgreSQL too.
-kubectl wait pod -l app.kubernetes.io/component=api --for condition=Ready --timeout 3m
+# The AppHost sets maxUnavailable: 0 on the API, so helm --wait above waited for its pod to pass the readiness probe,
+# which checks PostgreSQL too. The reminders Deployment keeps the publisher's maxUnavailable: 1, with which Helm counts
+# it ready with no pod ready at all, so the script waits for its pod itself.
 kubectl wait pod -l app.kubernetes.io/component=reminders --for condition=Ready --timeout 2m
-# The API exits when PostgreSQL is not accepting connections yet, so a few restarts are expected here.
+# The migrate init container fails while PostgreSQL is not accepting connections yet, so a few restarts are expected.
 kubectl get pods
 
 kubectl port-forward service/api-service "$port:8080" >/dev/null 2>&1 &

@@ -37,13 +37,17 @@ var app = builder.Build();
 // problem details without the stack trace, which stays in the logs.
 app.UseExceptionHandler();
 
-// Local runs create the schema on startup. In the cluster nothing else creates the database, so the AppHost turns
-// this on for the chart. Since EF Core 9, MigrateAsync takes a database lock, so several replicas starting at once
-// apply each migration only once.
-if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+// Local runs create the schema on startup. In the cluster an init container runs the same image with `migrate`, which
+// applies the migrations and exits, so the API starts only once the schema exists. Since EF Core 9, MigrateAsync
+// takes a database lock, so several pods starting at once apply each migration only once.
+if (app.Environment.IsDevelopment() || args is ["migrate"])
 {
     using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<EntryHubDbContext>().Database.MigrateAsync();
+    if (args is ["migrate"])
+    {
+        return;
+    }
 }
 
 app.UseAuthentication();

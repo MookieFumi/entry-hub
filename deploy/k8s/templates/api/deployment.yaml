@@ -48,6 +48,17 @@ spec:
               protocol: "TCP"
               containerPort: {{ .Values.parameters.api.port_http | int }}
           imagePullPolicy: "IfNotPresent"
+      initContainers:
+        - image: "{{ .Values.parameters.api.api_image }}"
+          name: "migrate"
+          envFrom:
+            - configMapRef:
+                name: "api-config"
+            - secretRef:
+                name: "api-secrets"
+          args:
+            - "migrate"
+          imagePullPolicy: "IfNotPresent"
   selector:
     matchLabels:
       app.kubernetes.io/name: "{{ .Chart.Name }}"
@@ -58,5 +69,5 @@ spec:
   strategy:
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
     type: "RollingUpdate"

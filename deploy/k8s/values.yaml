@@ -30,7 +30,6 @@ config:
     ENTRYHUB_USERNAME: "postgres"
     ENTRYHUB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres-service:5432/entryhub"
     ENTRYHUB_DATABASENAME: "entryhub"
-    Database__MigrateOnStartup: "true"
     jwt_issuer: ""
     jwt_audience: ""
     Authentication__Schemes__Bearer__SigningKeys__0__Length: "32"
