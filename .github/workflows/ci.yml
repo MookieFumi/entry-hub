@@ -164,7 +164,7 @@ jobs:
         run: |
           node --version
           # Restoring the C# AppHost downloads the Aspire CLI that comes with its SDK.
-          dotnet restore src/EntryHub.AppHost
+          dotnet restore ../../src/EntryHub.AppHost
           aspire="$(find "$HOME/.nuget/packages/aspire.cli.linux-x64" -type f -name aspire -path '*linux-x64/aspire' | sort | tail -n 1)"
           npm ci
           "$aspire" restore --non-interactive
