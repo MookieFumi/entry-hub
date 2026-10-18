@@ -60,6 +60,19 @@ public class OpenApiEndpointTests
     }
 
     [Fact]
+    public async Task Tells_who_maintains_the_api_and_under_which_license()
+    {
+        using var api = await TestApi.StartAsync();
+
+        var json = await api.ClientFor("fran", Roles.Facilities).GetStringAsync("/openapi/v1.json", CancellationToken.None);
+
+        using var document = JsonDocument.Parse(json);
+        var info = document.RootElement.GetProperty("info");
+        Assert.Equal("https://github.com/MookieFumi/entry-hub/issues", info.GetProperty("contact").GetProperty("url").GetString());
+        Assert.Equal("MIT", info.GetProperty("license").GetProperty("name").GetString());
+    }
+
+    [Fact]
     public async Task Describes_the_platform_probes_next_to_the_versioned_health_endpoint()
     {
         using var api = await TestApi.StartAsync();

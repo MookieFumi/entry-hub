@@ -4,13 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EntryHub API</title>
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+    <!-- Same brand header and colors as the Scalar page of the API (Documentation/ScalarBranding.cs). -->
+    <style>
+      .light-mode {
+        --scalar-color-accent: #0f766e;
+        --scalar-background-accent: #0f766e1f;
+      }
+      .dark-mode {
+        --scalar-color-accent: #2dd4bf;
+        --scalar-background-accent: #2dd4bf1f;
+      }
+      .entryhub-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        font: 600 16px/1 var(--scalar-font, sans-serif);
+        color: #fff;
+        background: #134e4a;
+      }
+    </style>
   </head>
   <body>
-    <!-- Static docs for the latest release. The release workflow copies openapi.json next to this page. -->
+    <header class="entryhub-brand"><img src="./logo.svg" alt="" width="28" height="28" /><span>EntryHub API</span></header>
+    <!-- Static docs for the latest release. The release workflow copies openapi.json and logo.svg next to this page. -->
     <div id="app"></div>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.3"></script>
     <script>
-      Scalar.createApiReference("#app", { url: "./openapi.json" });
+      Scalar.createApiReference("#app", { url: "./openapi.json", theme: "none" });
     </script>
   </body>
 </html>

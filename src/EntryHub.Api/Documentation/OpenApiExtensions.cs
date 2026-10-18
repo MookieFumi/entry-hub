@@ -15,6 +15,7 @@ public static class OpenApiExtensions
     private const string DocumentName = "v1";
     private const string BearerScheme = "Bearer";
     private const string ProbesTag = "Probes";
+    private const string RepositoryUrl = "https://github.com/MookieFumi/entry-hub";
 
     public static IServiceCollection AddEntryHubOpenApi(this IServiceCollection services) =>
         services.AddOpenApi(DocumentName, options =>
@@ -26,6 +27,16 @@ public static class OpenApiExtensions
                     Title = "EntryHub API",
                     Version = "1.0",
                     Description = "Room booking: rooms, bookings with business rules and a live occupancy stream.",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "EntryHub maintainers",
+                        Url = new Uri($"{RepositoryUrl}/issues"),
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "MIT",
+                        Url = new Uri($"{RepositoryUrl}/blob/main/LICENSE"),
+                    },
                 };
 
                 document.Components ??= new OpenApiComponents();
@@ -138,6 +149,10 @@ public static class OpenApiExtensions
 
         app.MapScalarApiReference(options => options
             .WithTitle("EntryHub API")
-            .AddPreferredSecuritySchemes(BearerScheme));
+            .AddPreferredSecuritySchemes(BearerScheme)
+            .WithFavicon(ScalarBranding.Favicon)
+            .AddHeaderContent(ScalarBranding.Header)
+            .WithTheme(ScalarTheme.None)
+            .WithCustomCss(ScalarBranding.Css));
     }
 }
