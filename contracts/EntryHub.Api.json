@@ -63,6 +63,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -257,6 +267,26 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesBrokenProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -359,6 +389,9 @@
           },
           "404": {
             "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         },
         "security": [
@@ -392,6 +425,19 @@
           },
           "404": {
             "description": "Not Found"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesBrokenProblem"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -715,6 +761,44 @@
           }
         }
       },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RoomOccupancy": {
         "required": [
           "roomId",
@@ -803,6 +887,64 @@
           "Free",
           "Occupied"
         ]
+      },
+      "RulesBrokenProblem": {
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "violations"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI that identifies the kind of problem."
+          },
+          "title": {
+            "type": "string",
+            "description": "A short summary of the problem."
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Always 422.",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string",
+            "description": "The messages of the broken rules, joined."
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleViolation"
+            },
+            "description": "Every rule the booking breaks, with a stable code."
+          }
+        },
+        "description": "A booking that breaks one or more booking rules."
+      },
+      "RuleViolation": {
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Stable identifier that clients can switch on."
+          },
+          "message": {
+            "type": "string",
+            "description": "Explanation for a person."
+          }
+        }
       },
       "SseItemOfRoomOccupancy": {
         "type": "object",
