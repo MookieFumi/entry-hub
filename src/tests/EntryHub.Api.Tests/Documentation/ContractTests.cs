@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using EntryHub.Api.Features.V1.Bookings.CreateBooking;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Security;
@@ -42,14 +43,60 @@ public class ContractTests
 
         foreach (var (response, path, method, status) in calls)
         {
-            Assert.Equal(status, ((int)response.StatusCode).ToString(System.Globalization.CultureInfo.InvariantCulture));
-
-            var schema = SchemaOf(contract, path, method, status, response.Content.Headers.ContentType?.MediaType);
-            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken.None));
-            var result = schema.Evaluate(body.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List });
-
-            Assert.True(result.IsValid, $"{method.ToUpperInvariant()} {path} -> {status} does not match the contract: {JsonSerializer.Serialize(result)}");
+            await AssertMatchesAsync(contract, response, path, method, status);
         }
+    }
+
+    [Fact]
+    public async Task Error_responses_match_the_contract()
+    {
+        var contract = JsonNode.Parse(await File.ReadAllTextAsync(ContractPath, CancellationToken.None))!;
+        using var api = await TestApi.StartAsync();
+        using var facilities = api.ClientFor("fran", Roles.Facilities);
+        using var employee = api.ClientFor($"ana-{Guid.NewGuid():N}", Roles.Employee);
+        using var other = api.ClientFor($"bea-{Guid.NewGuid():N}", Roles.Employee);
+
+        var name = $"Room {Guid.NewGuid():N}";
+        var created = await facilities.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(name, 2, 4, null), CancellationToken.None);
+        var room = (await created.Content.ReadFromJsonAsync<RoomResponse>(CancellationToken.None))!;
+        var tuesday = new DateTimeOffset(2026, 10, 20, 8, 0, 0, TimeSpan.Zero);
+        var saturday = new DateTimeOffset(2026, 10, 24, 8, 0, 0, TimeSpan.Zero);
+        (await employee.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "Planning", tuesday, tuesday.AddHours(1), 4), CancellationToken.None))
+            .EnsureSuccessStatusCode();
+
+        var calls = new[]
+        {
+            (Response: await facilities.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(name, 2, 4, null), CancellationToken.None), Path: "/api/v1/rooms", Method: "post", Status: "409"),
+            (Response: await facilities.GetAsync($"/api/v1/rooms/{Guid.CreateVersion7()}", CancellationToken.None), Path: "/api/v1/rooms/{id}", Method: "get", Status: "404"),
+            (Response: await other.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "Planning", saturday, saturday.AddHours(1), 9), CancellationToken.None), Path: "/api/v1/bookings", Method: "post", Status: "422"),
+            (Response: await other.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "Planning", tuesday.AddMinutes(30), tuesday.AddMinutes(90), 4), CancellationToken.None), Path: "/api/v1/bookings", Method: "post", Status: "409"),
+        };
+
+        foreach (var (response, path, method, status) in calls)
+        {
+            await AssertMatchesAsync(contract, response, path, method, status);
+        }
+    }
+
+    private static async Task AssertMatchesAsync(JsonNode contract, HttpResponseMessage response, string path, string method, string status)
+    {
+        Assert.Equal(status, ((int)response.StatusCode).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        var declared = contract["paths"]![path]![method]!["responses"]![status];
+        Assert.True(declared is not null, $"{method.ToUpperInvariant()} {path} answers {status}, which the contract does not declare.");
+
+        var body = await response.Content.ReadAsStringAsync(CancellationToken.None);
+        if (declared["content"] is null)
+        {
+            Assert.Empty(body);
+            return;
+        }
+
+        var schema = SchemaOf(contract, path, method, status, response.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(body);
+        var result = schema.Evaluate(json.RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+        Assert.True(result.IsValid, $"{method.ToUpperInvariant()} {path} -> {status} does not match the contract: {JsonSerializer.Serialize(result)}");
     }
 
     /// <summary>

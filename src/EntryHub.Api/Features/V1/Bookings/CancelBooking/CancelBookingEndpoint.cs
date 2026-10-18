@@ -9,7 +9,9 @@ namespace EntryHub.Api.Features.V1.Bookings.CancelBooking;
 public static class CancelBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapPost("/{id:guid}/cancel", HandleAsync).WithName("CancelBooking").WithSummary("Cancels a booking before it starts.");
+        group.MapPost("/{id:guid}/cancel", HandleAsync).WithName("CancelBooking").WithSummary("Cancels a booking before it starts.")
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<RulesBrokenProblem>(StatusCodes.Status422UnprocessableEntity, "application/problem+json");
 
     private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ProblemHttpResult>> HandleAsync(
         Guid id,

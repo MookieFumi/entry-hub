@@ -9,7 +9,9 @@ namespace EntryHub.Api.Features.V1.Bookings.CreateBooking;
 public static class CreateBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapPost("/", HandleAsync).WithName("CreateBooking").WithSummary("Books a room, enforcing the booking rules.");
+        group.MapPost("/", HandleAsync).WithName("CreateBooking").WithSummary("Books a room, enforcing the booking rules.")
+            .Produces<RulesBrokenProblem>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
     private static async Task<Results<Created<BookingResponse>, ProblemHttpResult>> HandleAsync(
         CreateBookingRequest request,
