@@ -1,0 +1,56 @@
+# .github/workflows/contract.yml
+name: API contract
+
+# Compares the committed contract of the pull request with the one on the base branch. The ci workflow already checks
+# that the committed contract matches the code, so this one only reads files and runs in seconds. It also runs when the
+# title is edited, because marking the change as breaking ("!") is what lets an incompatible change through.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  breaking-changes:
+    runs-on: ubuntu-latest
+    env:
+      OASDIFF_VERSION: 1.33.0
+      OASDIFF_SHA256: 43a4e328e2d13ba1552d760aa68d2485c75c5621f309f6ff64ae895188345247
+      CONTRACT: contracts/EntryHub.Api.json
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # oasdiff reads the base contract straight from the base branch (origin/<base>:<path>).
+          fetch-depth: 0
+
+      - name: Install oasdiff
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/oasdiff.tar.gz" \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          echo "${OASDIFF_SHA256}  $RUNNER_TEMP/oasdiff.tar.gz" | sha256sum --check --quiet
+          tar -xzf "$RUNNER_TEMP/oasdiff.tar.gz" -C "$RUNNER_TEMP" oasdiff
+
+      - name: Changes to the contract
+        # Every change, compatible or not, in the job summary.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          {
+            echo "## API contract changes"
+            "$RUNNER_TEMP/oasdiff" changelog "origin/${BASE_REF}:${CONTRACT}" "$CONTRACT" --format markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: No breaking changes
+        # A change that breaks existing clients fails unless the title marks it as breaking with "!", which also makes
+        # GitVersion bump the major version when the pull request is merged.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          fail_on="--fail-on ERR"
+          if [[ "$PR_TITLE" =~ ^[a-z]+(\([a-z0-9-]+\))?!: ]]; then
+            echo "The title marks this change as breaking: incompatible changes are reported but allowed."
+            fail_on=""
+          fi
+          "$RUNNER_TEMP/oasdiff" breaking "origin/${BASE_REF}:${CONTRACT}" "$CONTRACT" --format githubactions $fail_on

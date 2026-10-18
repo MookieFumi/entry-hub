@@ -183,6 +183,12 @@ the contract does not declare fails the test too.
 The endpoints with a validated body declare the 400 of the built-in validation with `ProducesValidationProblem()`, and
 the contract test checks it too. The 500 and 503 are not declared per operation: any endpoint can answer them.
 
+Every pull request also compares its contract with the one on the base branch (`.github/workflows/contract.yml`, with
+[oasdiff](https://github.com/oasdiff/oasdiff)). The job summary lists every change, and a change that breaks existing
+clients, such as a removed or renamed response field or a new required parameter, fails the check unless the pull
+request title marks it as breaking with `!` (for example `feat(rooms)!: rename floor to level`). With `!` the merge
+also bumps the major version.
+
 ## Deploy to Kubernetes
 
 The AppHost also describes the application for a cluster. `aspire publish` turns that model into a Helm chart, and the
