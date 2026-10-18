@@ -1,0 +1,42 @@
+parameters:
+  api:
+    port_http: 8080
+    api_image: "api:latest"
+  reminders:
+    reminders_image: "reminders:latest"
+secrets:
+  postgres:
+    postgres_password: ""
+  api:
+    ConnectionStrings__EntryHub: ""
+    postgres_password: ""
+    ENTRYHUB_URI: ""
+    jwt_signing_key: ""
+  reminders:
+    ConnectionStrings__EntryHub: ""
+    postgres_password: ""
+    ENTRYHUB_URI: ""
+config:
+  postgres:
+    POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+    POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    POSTGRES_USER: "postgres"
+  api:
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    HTTP_PORTS: ""
+    ENTRYHUB_HOST: "postgres-service"
+    ENTRYHUB_PORT: "5432"
+    ENTRYHUB_USERNAME: "postgres"
+    ENTRYHUB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres-service:5432/entryhub"
+    ENTRYHUB_DATABASENAME: "entryhub"
+    jwt_issuer: ""
+    jwt_audience: ""
+    Authentication__Schemes__Bearer__SigningKeys__0__Length: "32"
+  reminders:
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ENTRYHUB_HOST: "postgres-service"
+    ENTRYHUB_PORT: "5432"
+    ENTRYHUB_USERNAME: "postgres"
+    ENTRYHUB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres-service:5432/entryhub"
+    ENTRYHUB_DATABASENAME: "entryhub"

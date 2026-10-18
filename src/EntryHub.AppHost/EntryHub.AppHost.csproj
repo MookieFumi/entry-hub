@@ -3,9 +3,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
+    <!-- WithHttpProbe is still marked experimental; the Kubernetes probes depend on it. -->
+    <NoWarn>$(NoWarn);ASPIREPROBES001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Kubernetes" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Scalar.Aspire" />
     <ProjectReference Include="..\EntryHub.Api\EntryHub.Api.csproj" />
