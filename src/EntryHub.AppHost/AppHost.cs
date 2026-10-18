@@ -31,7 +31,22 @@ var api = builder.AddProject<Projects.EntryHub_Api>("api")
     // The readiness probe is also the health check Aspire waits on locally; in the chart it is what holds traffic
     // back until /health passes, and Kubernetes restarts the pod when /alive fails.
     .WithHttpProbe(ProbeType.Readiness, "/health", endpointName: "http")
-    .WithHttpProbe(ProbeType.Liveness, "/alive", endpointName: "http");
+    .WithHttpProbe(ProbeType.Liveness, "/alive", endpointName: "http")
+    // The preview Kubernetes publisher writes the probe scheme in lower case ("http"), and the API server only
+    // accepts "HTTP" or "HTTPS": the chart would not install. Remove once the publisher writes it correctly.
+    .PublishAsKubernetesService(service =>
+    {
+        foreach (var container in service.Workload?.PodTemplate.Spec.Containers ?? [])
+        {
+            foreach (var probe in new[] { container.LivenessProbe, container.ReadinessProbe, container.StartupProbe })
+            {
+                if (probe?.HttpGet is { Scheme: not null } httpGet)
+                {
+                    httpGet.Scheme = httpGet.Scheme.ToUpperInvariant();
+                }
+            }
+        }
+    });
 
 if (builder.ExecutionContext.IsPublishMode)
 {

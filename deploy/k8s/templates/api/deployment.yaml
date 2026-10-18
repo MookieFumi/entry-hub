@@ -24,7 +24,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 1
             httpGet:
-              scheme: "http"
+              scheme: "HTTP"
               path: "/alive"
               port: {{ .Values.parameters.api.port_http | int }}
           name: "api"
@@ -35,7 +35,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 1
             httpGet:
-              scheme: "http"
+              scheme: "HTTP"
               path: "/health"
               port: {{ .Values.parameters.api.port_http | int }}
           envFrom:
