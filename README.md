@@ -108,9 +108,18 @@ see in the dashboard under the `reminders` resource. Both values are settings un
 The dashboard also lists a `scalar-api-reference` resource: one API reference for the services of the application that
 publish an OpenAPI document, which today is only the API.
 
-The API serves `/health` (PostgreSQL included) and `/alive` in every environment: the AppHost waits on the first
-locally, and Kubernetes uses them as the readiness and liveness probes. They answer only `Healthy` or `Unhealthy`; do
-not route them through an ingress.
+The API serves `/health` and `/alive` in every environment. They are the probes of the platform, and they are not the
+same as `GET /api/v1/health`:
+
+| Endpoint | For | Answers | Checks |
+|---|---|---|---|
+| `/health` | Kubernetes readiness, the AppHost | plain text `Healthy` or `Unhealthy`, 200 or 503 | every health check, PostgreSQL included |
+| `/alive` | Kubernetes liveness | plain text, 200 or 503 | only that the process responds |
+| `GET /api/v1/health` | clients | JSON, 200 or 503 | PostgreSQL, part of the versioned contract |
+
+Readiness and liveness are separate on purpose: when PostgreSQL goes down the pods stop receiving traffic (`/health`)
+but are not restarted (`/alive`), which would not fix the database. The three appear in the OpenAPI document, the
+probes under the `Probes` tag. Do not route `/health` or `/alive` through an ingress.
 
 ### Get a token
 
