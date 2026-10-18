@@ -8,6 +8,7 @@ public static class CreateRoomEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
         group.MapPost("/", HandleAsync).WithName("CreateRoom").WithSummary("Creates a room. Facilities only.").RequireAuthorization(Policies.Facilities)
+            .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status409Conflict);
 
     private static async Task<Results<Created<RoomResponse>, ProblemHttpResult>> HandleAsync(
