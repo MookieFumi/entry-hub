@@ -3,6 +3,14 @@
   "info": {
     "title": "EntryHub API",
     "description": "Room booking: rooms, bookings with business rules and a live occupancy stream.",
+    "contact": {
+      "name": "EntryHub maintainers",
+      "url": "https://github.com/MookieFumi/entry-hub/issues"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/MookieFumi/entry-hub/blob/main/LICENSE"
+    },
     "version": "1.0"
   },
   "paths": {

@@ -38,6 +38,7 @@ jobs:
           mkdir -p site
           cp contracts/EntryHub.Api.json site/openapi.json
           cp docs/index.html site/index.html
+          cp docs/logo.svg site/logo.svg
 
       - name: Attach the contract to the release
         # The release may already exist (created from the GitHub UI together with the tag), so attach to it

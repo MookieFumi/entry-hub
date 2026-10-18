@@ -1,4 +1,4 @@
-# entry-hub
+# <img src="docs/logo.svg" alt="" width="40" height="40" align="center"> entry-hub
 
 <p>
   <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
@@ -153,6 +153,9 @@ OpenAPI 3.1 document at `/openapi/v1.json` and `/openapi/v1.yaml`. Authorize wit
 Outside Development the interactive page does not exist and the document needs a token with the `Facilities` role,
 so the contract is never public by accident. Open it to everyone on purpose by removing `RequireAuthorization` in
 `Documentation/OpenApiExtensions.cs`.
+
+The page carries the EntryHub logo (`docs/logo.svg`) and brand colors, set in `Documentation/ScalarBranding.cs`. The
+static docs of the release (`docs/index.html`) repeat the same header and CSS, so change both together.
 
 The contract is also generated at build time into `contracts/EntryHub.Api.json` and committed. CI fails if an
 endpoint changes and that file does not, so every API change shows up in the pull request diff.
