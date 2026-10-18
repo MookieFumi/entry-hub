@@ -67,8 +67,10 @@ public class ContractTests
         var calls = new[]
         {
             (Response: await facilities.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest(name, 2, 4, null), CancellationToken.None), Path: "/api/v1/rooms", Method: "post", Status: "409"),
+            (Response: await facilities.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest("", 2, 0, null), CancellationToken.None), Path: "/api/v1/rooms", Method: "post", Status: "400"),
             (Response: await facilities.GetAsync($"/api/v1/rooms/{Guid.CreateVersion7()}", CancellationToken.None), Path: "/api/v1/rooms/{id}", Method: "get", Status: "404"),
             (Response: await other.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "Planning", saturday, saturday.AddHours(1), 9), CancellationToken.None), Path: "/api/v1/bookings", Method: "post", Status: "422"),
+            (Response: await other.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "", tuesday, tuesday.AddHours(1), 0), CancellationToken.None), Path: "/api/v1/bookings", Method: "post", Status: "400"),
             (Response: await other.PostAsJsonAsync("/api/v1/bookings", new CreateBookingRequest(room.Id, "Planning", tuesday.AddMinutes(30), tuesday.AddMinutes(90), 4), CancellationToken.None), Path: "/api/v1/bookings", Method: "post", Status: "409"),
         };
 

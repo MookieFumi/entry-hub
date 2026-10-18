@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using EntryHub.Api.Data;
 using EntryHub.Api.Documentation;
+using EntryHub.Api.Errors;
 using EntryHub.Api.Features;
 using EntryHub.Api.Features.V1;
 using EntryHub.Api.Security;
@@ -22,12 +23,19 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddValidation();
+// Every error the framework writes (validation, unhandled exceptions) becomes application/problem+json.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DatabaseUnavailableHandler>();
 builder.Services.AddEntryHubSecurity();
 builder.Services.AddEntryHubOpenApi();
 builder.Services.AddFeatureHandlers();
 builder.Services.AddV1Features(builder.Configuration);
 
 var app = builder.Build();
+
+// First in the pipeline, so it catches what everything after it throws. Exceptions no handler takes become a 500
+// problem details without the stack trace, which stays in the logs.
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

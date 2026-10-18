@@ -10,6 +10,7 @@ public static class CreateBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
         group.MapPost("/", HandleAsync).WithName("CreateBooking").WithSummary("Books a room, enforcing the booking rules.")
+            .ProducesValidationProblem()
             .Produces<RulesBrokenProblem>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")
             .ProducesProblem(StatusCodes.Status409Conflict);
 
