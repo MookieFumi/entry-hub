@@ -146,3 +146,27 @@ jobs:
           dotnet test tests/EntryHub.AppHost.Tests -c Release --no-restore --filter "Category=Aspire" \
             --logger "console;verbosity=detailed" --blame-hang-timeout 8m
         working-directory: src
+
+  typescript-apphost:
+    # The TypeScript AppHost sample must keep compiling against the Aspire SDK it is generated from.
+    # It uses the Node.js that GitHub-hosted runners already have.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+
+      - name: Build the sample
+        run: |
+          node --version
+          # Restoring the C# AppHost downloads the Aspire CLI that comes with its SDK.
+          dotnet restore src/EntryHub.AppHost
+          aspire="$(find "$HOME/.nuget/packages/aspire.cli.linux-x64" -type f -name aspire -path '*linux-x64/aspire' | sort | tail -n 1)"
+          npm ci
+          "$aspire" restore --non-interactive
+          npm run build
+        working-directory: samples/typescript-apphost
