@@ -13,6 +13,22 @@ Neither project touches `EntryHub.Api`, which uses plain route groups under `/ap
 | One OpenAPI document per version | one `AddOpenApi("v1")`, `AddOpenApi("v2")` and a route filter per document | the same, plus `Asp.Versioning.Mvc.ApiExplorer` to tell the documents which endpoints belong to which version |
 | Unknown version (`/api/v3/rooms`) | 404 | 404 |
 
+## One OpenAPI document per version
+
+`MapGroupVersioning` also publishes one document per version. Each `AddOpenApi("v1")` and `AddOpenApi("v2")` keeps
+only the endpoints under its own prefix (`ShouldInclude`), and an operation transformer marks every operation of
+version 1 as deprecated. Scalar shows both documents with a selector, version 2 first.
+
+The build writes both files to `MapGroupVersioning/openapi/`: `MapGroupVersioning.json` for the first document
+(`v1`) and `MapGroupVersioning_v2.json` for the second. They are committed so the difference between the two
+versions can be read without running anything.
+
+```bash
+curl http://localhost:5301/openapi/v1.json
+curl http://localhost:5301/openapi/v2.json
+# Scalar: http://localhost:5301/scalar/
+```
+
 ## Run them
 
 ```bash
