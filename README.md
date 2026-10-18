@@ -268,15 +268,17 @@ dotnet test
 Each slice is tested in three layers: pure logic (no I/O), the handler against PostgreSQL, and the endpoint through
 `WebApplicationFactory`. The tests apply the migrations themselves before they touch the database.
 
-Handler and endpoint tests need a PostgreSQL. By default they look for one on `localhost:5432` with the user,
-password and database `entryhub`, for example:
+Handler and endpoint tests need a PostgreSQL, and they start their own: the first test that touches the database
+starts a `postgres:17-alpine` container with [Testcontainers](https://dotnet.testcontainers.org/), shared by the whole
+run and removed when it ends. All you need is Docker running. Without it, the tests fail at once with
+`DockerUnavailableException: Docker is either not running or misconfigured`; `docker info` tells you whether the
+machine or the CI agent has a working Docker.
+
+To use a PostgreSQL of your own instead, on a machine without Docker for example, set `ENTRYHUB_TEST_CONNECTION`:
 
 ```bash
-docker run -d --name entryhub-test-db -p 5432:5432 -e POSTGRES_USER=entryhub -e POSTGRES_PASSWORD=entryhub \
-  -e POSTGRES_DB=entryhub postgres:17-alpine
+ENTRYHUB_TEST_CONNECTION="Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub" dotnet test
 ```
-
-Set `ENTRYHUB_TEST_CONNECTION` to point them somewhere else (CI does this with a service container).
 
 The tests in `tests/EntryHub.AppHost.Tests` start the whole system the way the AppHost does (PostgreSQL in a
 container, the API and the reminders service), so they need a container runtime and no PostgreSQL of your own. They
