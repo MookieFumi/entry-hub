@@ -16,6 +16,7 @@ data:
   ENTRYHUB_USERNAME: "{{ .Values.config.api.ENTRYHUB_USERNAME }}"
   ENTRYHUB_JDBCCONNECTIONSTRING: "{{ .Values.config.api.ENTRYHUB_JDBCCONNECTIONSTRING }}"
   ENTRYHUB_DATABASENAME: "{{ .Values.config.api.ENTRYHUB_DATABASENAME }}"
+  Database__MigrateOnStartup: "{{ .Values.config.api.Database__MigrateOnStartup }}"
   Authentication__Schemes__Bearer__ValidIssuer: "{{ .Values.config.api.jwt_issuer }}"
   Authentication__Schemes__Bearer__ValidAudiences__0: "{{ .Values.config.api.jwt_audience }}"
   Authentication__Schemes__Bearer__SigningKeys__0__Issuer: "{{ .Values.config.api.jwt_issuer }}"

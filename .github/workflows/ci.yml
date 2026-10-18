@@ -146,3 +146,27 @@ jobs:
           dotnet test tests/EntryHub.AppHost.Tests -c Release --no-restore --filter "Category=Aspire" \
             --logger "console;verbosity=detailed" --blame-hang-timeout 8m
         working-directory: src
+
+  kubernetes:
+    # Installs the committed chart in a kind cluster and checks the application there (scripts/test-k8s.sh).
+    # GitHub-hosted Ubuntu runners come with Docker, kind, kubectl and helm.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Tools
+        run: |
+          kind version
+          kubectl version --client
+          helm version
+
+      - name: Install the chart and check the application
+        run: scripts/test-k8s.sh

@@ -205,6 +205,9 @@ What the chart contains, and what it leaves for you:
 - A `postgres-data` PersistentVolumeClaim (5Gi) mounted by PostgreSQL, so the data survives restarts. The storage
   class is the cluster default.
 - Readiness (`/health`) and liveness (`/alive`) probes on the API.
+- `Database__MigrateOnStartup=true` on the API. The PostgreSQL container starts empty, so the API creates the database
+  and applies the migrations when it starts. EF Core takes a database lock while it migrates, so replicas starting at
+  the same time are safe. Until PostgreSQL accepts connections the API fails to start and Kubernetes restarts it.
 - Nothing sensitive. Passwords and the JWT signing key are empty entries in `values.yaml` (`secrets.*`), and the
   issuer and audience are empty entries under `config.api`: pass them when you install, never commit them.
 - Image names (`parameters.api.api_image`, `parameters.reminders.reminders_image`) that you set to images you have
@@ -220,8 +223,17 @@ helm install entry-hub deploy/k8s \
   --set config.api.jwt_issuer=... --set config.api.jwt_audience=...
 ```
 
-`Aspire.Hosting.Kubernetes` is still a preview package, so the shape of the chart can change between versions. The
-chart has been generated and reviewed, but not installed in a cluster from this repository yet.
+`Aspire.Hosting.Kubernetes` is still a preview package, so the shape of the chart can change between versions.
+
+The `kubernetes` job of CI installs the chart in a [kind](https://kind.sigs.k8s.io/) cluster on every pull request.
+It builds both images with `dotnet publish -t:PublishContainer`, installs the chart with generated secrets, creates a
+room through the API and waits for the reminders service to remind a booking. With Docker, kind, kubectl and helm
+installed, the same check runs locally:
+
+```bash
+scripts/test-k8s.sh         # creates the kind cluster "entry-hub" if it does not exist
+kind delete cluster --name entry-hub
+```
 
 ## Releases
 

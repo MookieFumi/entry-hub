@@ -42,6 +42,8 @@ if (builder.ExecutionContext.IsPublishMode)
     var signingKey = builder.AddParameter("jwt-signing-key", secret: true);
 
     api
+        // The PostgreSQL container of the chart starts empty: the API creates the database and its schema.
+        .WithEnvironment("Database__MigrateOnStartup", "true")
         .WithEnvironment("Authentication__Schemes__Bearer__ValidIssuer", issuer)
         .WithEnvironment("Authentication__Schemes__Bearer__ValidAudiences__0", audience)
         .WithEnvironment("Authentication__Schemes__Bearer__SigningKeys__0__Issuer", issuer)
