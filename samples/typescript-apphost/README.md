@@ -43,3 +43,10 @@ The chart is the one in `deploy/k8s`, with these differences:
 - PostgreSQL has no PersistentVolumeClaim: the generated TypeScript SDK does not expose `WithPersistentVolume` in
   Aspire 13.6.1, so the data volume becomes an `emptyDir`. Use the C# AppHost for anything but a demo.
 - The chart is named `aspire-managed` instead of `entryhub-apphost`.
+
+## Dependencies
+
+`package.json` is the one the Aspire template generates. `nodemon` (restarts the AppHost on changes during `aspire run`)
+pulls in a version of `braces` that `npm audit` flags as high severity (a denial of service when it parses deeply nested
+glob patterns). It is a development-only tool that never receives untrusted input here, so it stays until the template
+moves to a patched release.
