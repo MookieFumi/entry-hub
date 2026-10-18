@@ -13,10 +13,6 @@ public static class BookingsEndpoints
     {
         services.Configure<BookingRulesOptions>(configuration.GetSection("BookingRules"));
         services.AddSingleton<BookingPolicy>();
-        services.AddScoped<CreateBookingHandler>();
-        services.AddScoped<GetBookingHandler>();
-        services.AddScoped<CancelBookingHandler>();
-        services.AddScoped<ListMyBookingsHandler>();
 
         return services;
     }
