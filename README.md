@@ -270,15 +270,7 @@ Each slice is tested in three layers: pure logic (no I/O), the handler against P
 
 Handler and endpoint tests need a PostgreSQL, and they start their own: the first test that touches the database
 starts a `postgres:17-alpine` container with [Testcontainers](https://dotnet.testcontainers.org/), shared by the whole
-run and removed when it ends. All you need is Docker running. Without it, the tests fail at once with
-`DockerUnavailableException: Docker is either not running or misconfigured`; `docker info` tells you whether the
-machine or the CI agent has a working Docker.
-
-To use a PostgreSQL of your own instead, on a machine without Docker for example, set `ENTRYHUB_TEST_CONNECTION`:
-
-```bash
-ENTRYHUB_TEST_CONNECTION="Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub" dotnet test
-```
+run and removed when it ends. All you need is a Docker engine that runs Linux containers.
 
 The tests in `tests/EntryHub.AppHost.Tests` start the whole system the way the AppHost does (PostgreSQL in a
 container, the API and the reminders service), so they need a container runtime and no PostgreSQL of your own. They
@@ -288,6 +280,54 @@ carry the trait `Category=Aspire`, and the `build` job leaves them out because t
 dotnet test tests/EntryHub.AppHost.Tests              # only the whole-system tests
 dotnet test --filter "Category!=Aspire"               # everything else
 ```
+
+### `ENTRYHUB_TEST_CONNECTION`
+
+| | |
+|---|---|
+| What | A Npgsql connection string for the API tests (`EntryHub.Api.Tests`) |
+| Not set (default) | The tests start a PostgreSQL container with Testcontainers |
+| Set | The tests use that PostgreSQL and start no container, so they run without Docker |
+| What the database needs | The user must be able to create tables: the tests apply the migrations themselves, once per run |
+| Not used by | The whole-system tests (`EntryHub.AppHost.Tests`), which always start PostgreSQL through the AppHost |
+
+```bash
+ENTRYHUB_TEST_CONNECTION="Host=localhost;Port=5432;Database=entryhub;Username=entryhub;Password=entryhub" dotnet test
+```
+
+Use a database only for tests: they insert rooms and bookings and leave most of them behind, and some delete the
+rooms and bookings of the floor they work on.
+
+### Is there a Docker?
+
+`scripts/check-docker.sh` answers that, and CI runs it before the tests in the `build` and `aspire` jobs. It fails
+with a message that says what is missing: no `docker` command, an engine that does not answer (daemon stopped, or a
+user without access to its socket), or an engine that runs Windows containers. Without that check the tests would
+fail anyway, at once, with `DockerUnavailableException: Docker is either not running or misconfigured`.
+
+```bash
+scripts/check-docker.sh   # prints the engine version, OS type and architecture when Docker is usable
+```
+
+CI does not try to install Docker when it is missing. Installing it needs root and a daemon running on the agent, which
+its owner may not allow, so it belongs in the agent image, not in the pipeline. The way out on an agent
+without Docker is `ENTRYHUB_TEST_CONNECTION`.
+
+### Running the tests in other CI systems
+
+| CI | Docker on the agent | PostgreSQL without Testcontainers |
+|---|---|---|
+| GitHub Actions | Ubuntu runners have it. Windows runners run Windows containers only and macOS runners have none, so use Ubuntu | A `services:` container (what this repository did before) plus `ENTRYHUB_TEST_CONNECTION`. It still runs on the runner's Docker |
+| Azure DevOps | Microsoft-hosted Ubuntu agents have it; self-hosted agents need it installed | Service containers (`resources.containers` and `services:` on the job), the same idea and the same need for Docker |
+| Jenkins | Whatever the agent machine has: install Docker on it, or mount the host's Docker socket into a containerized agent | With the Kubernetes plugin, a PostgreSQL container next to the agent in its pod, reached on `localhost`: Kubernetes runs it, the agent needs no Docker |
+
+On any of them, the option with no containers at all is a PostgreSQL that already exists (installed on the agent or
+a shared database for tests) and `ENTRYHUB_TEST_CONNECTION` pointing to it. The whole-system tests have no such way
+out: they always need a container runtime.
+
+Docker is not the only engine Testcontainers can use: Podman works when it exposes its Docker-compatible socket and
+`DOCKER_HOST` points to it, and a remote Docker engine works the same way. For the Aspire tests, Aspire supports
+Docker and Podman as container runtimes.
 
 ## What CI reports on each pull request
 

@@ -60,6 +60,11 @@ jobs:
           dotnet tool restore
           dotnet gitversion /output json | tee "$RUNNER_TEMP/gitversion.json"
 
+      - name: Docker
+        # The API tests start their PostgreSQL with Testcontainers. Fails here, with a clear message, when the runner
+        # has no Docker that runs Linux containers.
+        run: scripts/check-docker.sh
+
       - name: Test
         # The tests that start the whole system with Aspire need containers and run in the aspire job.
         run: >
@@ -123,6 +128,9 @@ jobs:
           global-json-file: src/global.json
           cache: true
           cache-dependency-path: "**/packages.lock.json"
+
+      - name: Docker
+        run: scripts/check-docker.sh
 
       - name: Test the whole system
         run: |
