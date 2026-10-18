@@ -4,7 +4,7 @@
   <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://mookiefumi.github.io/entry-hub/"><img alt="API docs" src="https://img.shields.io/badge/API-docs-85EA2D?logo=swagger&amp;logoColor=black&amp;style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?logo=git&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?display_timestamp=committer&amp;logo=git&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/MookieFumi/entry-hub?style=flat-square"></a>
   <a href="https://github.com/MookieFumi/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
 </p>
