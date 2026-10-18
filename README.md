@@ -225,6 +225,24 @@ helm install entry-hub deploy/k8s \
 
 `Aspire.Hosting.Kubernetes` is still a preview package, so the shape of the chart can change between versions.
 
+### What installing the chart taught us
+
+CI checked for a long time that the committed chart was up to date, but nothing installed it. The first installs found
+three problems that reading it did not:
+
+| Problem | What you see | Fix |
+|---|---|---|
+| The publisher writes the probe scheme in lower case | `helm install` fails: `httpGet.scheme: Unsupported value: "http"` | `PublishAsKubernetesService` in the AppHost upper-cases it, so the chart stays fully generated. Remove it once the publisher writes `HTTP` |
+| Nothing creates the database | The API cannot start because the `entryhub` database does not exist. Locally Aspire creates it and the API migrates only in Development | `Database__MigrateOnStartup=true`, set by the AppHost in publish mode only (see the list above) |
+| `helm --wait` reports a broken API as deployed | `STATUS: deployed` while the API pod is in `CrashLoopBackOff` | Wait for the pods with `kubectl wait --for condition=Ready`. The generated Deployments run one replica with `maxUnavailable: 1`, so for Helm zero ready pods count as ready |
+
+That last setting matters beyond CI: during a rolling update, Kubernetes may stop the only API pod before the new one
+is ready. With a single replica, expect a short gap in service on every upgrade, or customize the strategy with
+`PublishAsKubernetesService` before relying on it.
+
+On a fresh install the API usually restarts once or twice: it exits while PostgreSQL is still initializing, and
+Kubernetes starts it again until the migration succeeds.
+
 The `kubernetes` job of CI installs the chart in a [kind](https://kind.sigs.k8s.io/) cluster on every pull request.
 It builds both images with `dotnet publish -t:PublishContainer`, installs the chart with generated secrets, creates a
 room through the API and waits for the reminders service to remind a booking. With Docker, kind, kubectl and helm
