@@ -173,6 +173,12 @@ each response against the schema the contract declares for that operation, so an
 fails the build. It covers the successful responses of a few operations; the contract does not declare error
 responses yet.
 
+Every pull request also compares its contract with the one on the base branch (`.github/workflows/contract.yml`, with
+[oasdiff](https://github.com/oasdiff/oasdiff)). The job summary lists every change, and a change that breaks existing
+clients, such as a removed or renamed response field or a new required parameter, fails the check unless the pull
+request title marks it as breaking with `!` (for example `feat(rooms)!: rename floor to level`). With `!` the merge
+also bumps the major version.
+
 ## Deploy to Kubernetes
 
 The AppHost also describes the application for a cluster. `aspire publish` turns that model into a Helm chart, and the
