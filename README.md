@@ -205,6 +205,12 @@ What the chart contains, and what it leaves for you:
 - A `postgres-data` PersistentVolumeClaim (5Gi) mounted by PostgreSQL, so the data survives restarts. The storage
   class is the cluster default.
 - Readiness (`/health`) and liveness (`/alive`) probes on the API.
+- A `migrate` init container on the API pod. The PostgreSQL container starts empty, so before the API starts, its own
+  image runs with the `migrate` argument: it creates the database, applies the migrations and exits. Until PostgreSQL
+  accepts connections it fails and Kubernetes runs it again. EF Core takes a database lock while it migrates, so pods
+  starting at the same time are safe.
+- `maxUnavailable: 0` on the API Deployment: an upgrade starts the new pod and stops the old one only once the new
+  one is ready, so there is always an API pod serving.
 - Nothing sensitive. Passwords and the JWT signing key are empty entries in `values.yaml` (`secrets.*`), and the
   issuer and audience are empty entries under `config.api`: pass them when you install, never commit them.
 - Image names (`parameters.api.api_image`, `parameters.reminders.reminders_image`) that you set to images you have
@@ -220,8 +226,31 @@ helm install entry-hub deploy/k8s \
   --set config.api.jwt_issuer=... --set config.api.jwt_audience=...
 ```
 
-`Aspire.Hosting.Kubernetes` is still a preview package, so the shape of the chart can change between versions. The
-chart has been generated and reviewed, but not installed in a cluster from this repository yet.
+`Aspire.Hosting.Kubernetes` is still a preview package, so the shape of the chart can change between versions.
+
+### What installing the chart taught us
+
+CI checked for a long time that the committed chart was up to date, but nothing installed it. The first installs found
+three problems that reading it did not:
+
+| Problem | What you see | Fix |
+|---|---|---|
+| The publisher writes the probe scheme in lower case | `helm install` fails: `httpGet.scheme: Unsupported value: "http"` | The AppHost upper-cases it. Remove it once the publisher writes `HTTP` |
+| Nothing creates the database | The API cannot start because the `entryhub` database does not exist. Locally Aspire creates it and the API migrates only in Development | The `migrate` init container, added by the AppHost (see the list above) |
+| `helm --wait` reports a broken API as deployed | `STATUS: deployed` while the API pod is in `CrashLoopBackOff` | The publisher writes `maxUnavailable: 1`, and with one replica Helm counts zero ready pods as ready. The AppHost sets `maxUnavailable: 0` on the API, which also keeps an API pod serving during upgrades |
+
+All three fixes live in `PublishAsKubernetesService` in the AppHost, so the chart stays fully generated. The
+reminders Deployment keeps `maxUnavailable: 1`: it serves no traffic, and `helm --wait` does not wait for its pod.
+
+The `kubernetes` job of CI installs the chart in a [kind](https://kind.sigs.k8s.io/) cluster on every pull request.
+It builds both images with `dotnet publish -t:PublishContainer`, installs the chart with generated secrets, creates a
+room through the API and waits for the reminders service to remind a booking. With Docker, kind, kubectl and helm
+installed, the same check runs locally:
+
+```bash
+scripts/test-k8s.sh         # creates the kind cluster "entry-hub" if it does not exist
+kind delete cluster --name entry-hub
+```
 
 ## Releases
 

@@ -37,11 +37,17 @@ var app = builder.Build();
 // problem details without the stack trace, which stays in the logs.
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+// Local runs create the schema on startup. In the cluster an init container runs the same image with `migrate`, which
+// applies the migrations and exits, so the API starts only once the schema exists. Since EF Core 9, MigrateAsync
+// takes a database lock, so several pods starting at once apply each migration only once.
+if (app.Environment.IsDevelopment() || args is ["migrate"])
 {
-    // Local runs create the schema on startup; other environments apply migrations as a deployment step.
     using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<EntryHubDbContext>().Database.MigrateAsync();
+    if (args is ["migrate"])
+    {
+        return;
+    }
 }
 
 app.UseAuthentication();

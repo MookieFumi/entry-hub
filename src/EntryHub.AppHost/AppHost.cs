@@ -1,3 +1,5 @@
+using Aspire.Hosting.Kubernetes.Resources;
+
 using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -31,7 +33,44 @@ var api = builder.AddProject<Projects.EntryHub_Api>("api")
     // The readiness probe is also the health check Aspire waits on locally; in the chart it is what holds traffic
     // back until /health passes, and Kubernetes restarts the pod when /alive fails.
     .WithHttpProbe(ProbeType.Readiness, "/health", endpointName: "http")
-    .WithHttpProbe(ProbeType.Liveness, "/alive", endpointName: "http");
+    .WithHttpProbe(ProbeType.Liveness, "/alive", endpointName: "http")
+    .PublishAsKubernetesService(service =>
+    {
+        var deployment = (Deployment)service.Workload!;
+        var pod = deployment.PodTemplate.Spec;
+        var container = pod.Containers.Single();
+
+        // The preview Kubernetes publisher writes the probe scheme in lower case ("http"), and the API server only
+        // accepts "HTTP" or "HTTPS": the chart would not install. Remove once the publisher writes it correctly.
+        foreach (var probe in new[] { container.LivenessProbe, container.ReadinessProbe, container.StartupProbe })
+        {
+            if (probe?.HttpGet is { Scheme: not null } httpGet)
+            {
+                httpGet.Scheme = httpGet.Scheme.ToUpperInvariant();
+            }
+        }
+
+        // The PostgreSQL container of the chart starts empty. Before the API starts, the same image with `migrate`
+        // creates the database and applies the migrations; Kubernetes retries it until PostgreSQL accepts connections.
+        var migrate = new ContainerV1
+        {
+            Name = "migrate",
+            Image = container.Image,
+            ImagePullPolicy = container.ImagePullPolicy,
+        };
+        migrate.Args.Add("migrate");
+        // Copies, not the same objects: shared objects come out as YAML anchors and aliases in the chart.
+        migrate.EnvFrom.AddRange(container.EnvFrom.Select(source => new EnvFromSourceV1
+        {
+            ConfigMapRef = source.ConfigMapRef is { } map ? new ConfigMapEnvSourceV1 { Name = map.Name } : null,
+            SecretRef = source.SecretRef is { } secret ? new SecretEnvSourceV1 { Name = secret.Name } : null,
+        }));
+        pod.InitContainers.Add(migrate);
+
+        // The publisher allows one pod unavailable, which with one replica means none at all: an upgrade could stop the
+        // only API pod before the new one is ready, and `helm --wait` would report the release ready with no pod ready.
+        deployment.Spec.Strategy.RollingUpdate.MaxUnavailable = 0;
+    });
 
 if (builder.ExecutionContext.IsPublishMode)
 {
