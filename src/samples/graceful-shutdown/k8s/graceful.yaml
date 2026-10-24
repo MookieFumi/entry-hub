@@ -1,0 +1,52 @@
+# The same Deployment with the three pieces that let the old pod finish its work: a preStop wait, a worker that drains
+# its queue, and a grace period that covers both.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graceful-shutdown
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graceful-shutdown
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: graceful-shutdown
+    spec:
+      # Counted from the start of preStop: 10 seconds of preStop plus the 45 of ShutdownTimeout, with some margin.
+      # When it runs out, Kubernetes sends SIGKILL and whatever is still queued is lost.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: api
+          image: graceful-shutdown:test
+          env:
+            - name: Jobs__Drain
+              value: "true"
+            - name: Jobs__ShutdownTimeoutSeconds
+              value: "45"
+            - name: Ledger__Path
+              value: /ledger/processed.log
+          lifecycle:
+            # Kubernetes takes the pod out of the Service and sends SIGTERM at the same time, and the change takes a
+            # moment to reach every node. Waiting before SIGTERM lets the requests stop arriving first.
+            # The sleep action needs Kubernetes 1.30 or later; before that, exec ["sleep", "10"].
+            preStop:
+              sleep:
+                seconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 2
+          volumeMounts:
+            - name: ledger
+              mountPath: /ledger
+      volumes:
+        - name: ledger
+          persistentVolumeClaim:
+            claimName: ledger

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- The image scripts/test-graceful-shutdown.sh loads into kind. -->
+    <ContainerRepository>graceful-shutdown</ContainerRepository>
+  </PropertyGroup>
+
+</Project>
