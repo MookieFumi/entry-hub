@@ -1212,7 +1212,7 @@
       "entryhub.api": {
         "type": "Project",
         "dependencies": {
-          "Aspire.Npgsql.EntityFrameworkCore.PostgreSQL": "[13.6.1, )",
+          "Aspire.Npgsql.EntityFrameworkCore.PostgreSQL": "[13.6.4, )",
           "EntryHub.ServiceDefaults": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.13, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.13, )",
@@ -1323,9 +1323,9 @@
       },
       "Aspire.Npgsql.EntityFrameworkCore.PostgreSQL": {
         "type": "CentralTransitive",
-        "requested": "[13.6.1, )",
-        "resolved": "13.6.1",
-        "contentHash": "4J8ZPPlo88+wt3frbASAPH6OBGMZ1/f9ywnEsSsS8QvMECAU6RWgmxrR/Qjg70L0Dax5Ontt9IWyq8TYvGj2kg==",
+        "requested": "[13.6.4, )",
+        "resolved": "13.6.4",
+        "contentHash": "I1yNkpgXC5Vc2DufGpx5gZubi5cgW7rfR/15VaZNAMieLqO0yTZF4+EmyQoEQ3qsmg0MPc0ALV2zUMF6IcEhLg==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "10.0.12",
           "Microsoft.Extensions.Configuration.Abstractions": "10.0.12",
