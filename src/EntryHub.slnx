@@ -6,6 +6,7 @@
   <Folder Name="/samples/">
     <Project Path="samples/versioning/AspVersioning/AspVersioning.csproj" />
     <Project Path="samples/versioning/MapGroupVersioning/MapGroupVersioning.csproj" />
+    <Project Path="samples/graceful-shutdown/GracefulShutdown/GracefulShutdown.csproj" />
   </Folder>
   <Project Path="EntryHub.Api/EntryHub.Api.csproj" />
   <Project Path="EntryHub.AppHost/EntryHub.AppHost.csproj" />

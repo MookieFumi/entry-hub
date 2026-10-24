@@ -1,0 +1,40 @@
+# What you get without thinking about shutdown: the worker leaves as soon as it is told to stop, and Kubernetes sends
+# SIGTERM while it is still taking the pod out of the Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graceful-shutdown
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graceful-shutdown
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: graceful-shutdown
+    spec:
+      containers:
+        - name: api
+          image: graceful-shutdown:test
+          env:
+            - name: Jobs__Drain
+              value: "false"
+            - name: Ledger__Path
+              value: /ledger/processed.log
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 2
+          volumeMounts:
+            - name: ledger
+              mountPath: /ledger
+      volumes:
+        - name: ledger
+          persistentVolumeClaim:
+            claimName: ledger
