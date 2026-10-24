@@ -1,0 +1,22 @@
+# The volume that keeps the ledger, one line per processed job, so the jobs of a pod that is gone can still be counted.
+# kind has a single node, so the old and the new pod can mount the same ReadWriteOnce volume during the rollout.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ledger
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graceful-shutdown
+spec:
+  selector:
+    app: graceful-shutdown
+  ports:
+    - port: 80
+      targetPort: 8080

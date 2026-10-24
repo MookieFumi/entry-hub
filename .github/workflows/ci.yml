@@ -162,3 +162,8 @@ jobs:
 
       - name: Install the chart and check the application
         run: scripts/test-k8s.sh
+
+      # Rolls out a new version of src/samples/graceful-shutdown under load in the same cluster, without and with an
+      # orderly shutdown, and fails if the orderly one loses any job or request.
+      - name: Roll out under load and count the lost jobs
+        run: scripts/test-graceful-shutdown.sh
