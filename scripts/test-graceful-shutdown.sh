@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deploys src/samples/graceful-shutdown in a kind cluster twice, once without and once with an orderly shutdown, and
-# rolls out a new version of each under load. Each request leaves two jobs in memory; the script counts how many of
-# them were processed and how many requests failed during the rollout.
+# Deploys src/samples/graceful-shutdown in a kind cluster three times (without an orderly shutdown, with only the preStop
+# wait, and with the whole orderly shutdown) and rolls out a new version of each under load. Each request leaves two
+# jobs in memory; the script counts how many of them were processed and how many requests failed during the rollout.
 # Needs Docker, kind and kubectl. GitHub-hosted Ubuntu runners have all of them.
 set -euo pipefail
 
@@ -10,6 +10,8 @@ manifests="$root/src/samples/graceful-shutdown/k8s"
 cluster="${KIND_CLUSTER:-entry-hub}"
 work="$(mktemp -d)"
 load_seconds=45
+burst_after=9
+burst_size=80
 rollout_after=10
 
 dotnet publish "$root/src/samples/graceful-shutdown/GracefulShutdown" -c Release --nologo -v quiet \
@@ -32,13 +34,21 @@ run() {
   old="$(kubectl get pods -l app=graceful-shutdown -o jsonpath='{.items[0].metadata.name}')"
   kubectl logs -f --timestamps "$old" > "$work/$mode-old.log" 2>&1 &
 
-  # A steady stream of requests from inside the cluster, through the Service, as the clients of the API would send them.
-  # Each line is the job id and the status code; a request that does not get an answer is printed with code 000.
+  # Requests from inside the cluster, through the Service, as the clients of the API would send them: a steady stream
+  # the pod keeps up with, and a burst just before the rollout that leaves a backlog of jobs in memory. Each line is the
+  # job id and the status code; a request that does not get an answer is printed with code 000.
   kubectl run load --image curlimages/curl:8.11.1 --restart Never --command -- sh -c "
-    end=\$((\$(date +%s) + $load_seconds))
-    while [ \$(date +%s) -lt \$end ]; do
-      curl -s -X POST --max-time 3 -w ' %{http_code}\n' http://graceful-shutdown/jobs || true
-      sleep 0.2
+    post() { curl -s -X POST --max-time 3 -w ' %{http_code}\\n' http://graceful-shutdown/jobs || true; }
+    start=\$(date +%s)
+    burst=1
+    while [ \$(date +%s) -lt \$((start + $load_seconds)) ]; do
+      if [ \$burst = 1 ] && [ \$(date +%s) -ge \$((start + $burst_after)) ]; then
+        for i in \$(seq $burst_size); do post & done
+        wait
+        burst=0
+      fi
+      post
+      sleep 0.5
     done"
   kubectl wait pod/load --for condition=Ready --timeout 1m
 
@@ -71,6 +81,7 @@ run() {
 }
 
 run naive
+run prestop
 run graceful
 
 echo "===== summary ====="

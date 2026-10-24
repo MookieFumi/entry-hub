@@ -4,14 +4,16 @@ A Minimal API where each `POST /jobs` leaves two jobs in memory, one for each of
 (`ConfirmationWorker` and `AuditWorker`), and answers `202` before they run. Each job takes 300 ms and writes one line
 to a ledger file. Nothing in `EntryHub.Api` uses it.
 
-`scripts/test-graceful-shutdown.sh` deploys it in kind twice and rolls out a new version under load each time:
+`scripts/test-graceful-shutdown.sh` deploys it in kind three times and rolls out a new version under load each time.
+The load is a steady stream the pod keeps up with, plus a burst of 80 requests just before the rollout, which leaves
+about 24 seconds of jobs queued in the old pod.
 
-| | `k8s/naive.yaml` | `k8s/graceful.yaml` |
-|---|---|---|
-| Worker | `Jobs__Drain=false`: the stopping token goes to the job, so the job in progress is cancelled and the queue is left behind | `Jobs__Drain=true`: the job gets `CancellationToken.None` and the worker returns once the queue is empty |
-| `preStop` | none | `sleep: 10`, so the pod is out of the Service before it gets SIGTERM |
-| `HostOptions.ShutdownTimeout` | 30 s (the default) | 45 s |
-| `terminationGracePeriodSeconds` | 30 s (the default) | 60 s |
+| | `k8s/naive.yaml` | `k8s/prestop.yaml` | `k8s/graceful.yaml` |
+|---|---|---|---|
+| Worker | `Jobs__Drain=false`: the stopping token goes to the job, so the job in progress is cancelled and the queue is left behind | `Jobs__Drain=false` | `Jobs__Drain=true`: the job gets `CancellationToken.None` and the worker returns once the queue is empty |
+| `preStop` | none | `sleep: 10`, so the pod is out of the Service before it gets SIGTERM | `sleep: 10` |
+| `HostOptions.ShutdownTimeout` | 30 s (the default) | 45 s | 45 s |
+| `terminationGracePeriodSeconds` | 30 s (the default) | 60 s | 60 s |
 
 The ledger lives on a volume both pods mount, so the jobs of the old pod can still be counted after it is gone. The
 script compares the jobs the accepted requests queued with the lines in the ledger, and fails if the graceful
