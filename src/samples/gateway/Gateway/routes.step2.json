@@ -1,0 +1,26 @@
+{
+  "ReverseProxy": {
+    "Routes": {
+      "orders": {
+        "ClusterId": "new",
+        "RateLimiterPolicy": "per-client",
+        "Match": { "Path": "/api/v1/orders/{**rest}" }
+      },
+      "customers": {
+        "ClusterId": "new",
+        "RateLimiterPolicy": "per-client",
+        "Match": { "Path": "/api/v1/customers/{**rest}" }
+      },
+      "everything-else": {
+        "ClusterId": "legacy",
+        "Order": 1000,
+        "Match": { "Path": "/api/v1/{**rest}" },
+        "Transforms": [ { "PathRemovePrefix": "/api/v1" } ]
+      }
+    },
+    "Clusters": {
+      "new": { "Destinations": { "d1": { "Address": "http://localhost:5401" } } },
+      "legacy": { "Destinations": { "d1": { "Address": "http://localhost:5402" } } }
+    }
+  }
+}

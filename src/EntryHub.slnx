@@ -7,6 +7,11 @@
     <Project Path="samples/versioning/AspVersioning/AspVersioning.csproj" />
     <Project Path="samples/versioning/MapGroupVersioning/MapGroupVersioning.csproj" />
     <Project Path="samples/graceful-shutdown/GracefulShutdown/GracefulShutdown.csproj" />
+    <Project Path="samples/gateway/Gateway/Gateway.csproj" />
+    <Project Path="samples/gateway/LegacyApi/LegacyApi.csproj" />
+    <Project Path="samples/gateway/NewApi/NewApi.csproj" />
+    <Project Path="samples/two-instances/Balancer/Balancer.csproj" />
+    <Project Path="samples/two-instances/ProductsApi/ProductsApi.csproj" />
   </Folder>
   <Project Path="EntryHub.Api/EntryHub.Api.csproj" />
   <Project Path="EntryHub.AppHost/EntryHub.AppHost.csproj" />
