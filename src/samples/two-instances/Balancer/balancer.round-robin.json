@@ -1,0 +1,19 @@
+{
+  "ReverseProxy": {
+    "Routes": {
+      "products": {
+        "ClusterId": "products",
+        "Match": { "Path": "/products/{**rest}" }
+      }
+    },
+    "Clusters": {
+      "products": {
+        "LoadBalancingPolicy": "RoundRobin",
+        "Destinations": {
+          "instance-1": { "Address": "http://localhost:5501" },
+          "instance-2": { "Address": "http://localhost:5502" }
+        }
+      }
+    }
+  }
+}
