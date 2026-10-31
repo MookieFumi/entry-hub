@@ -139,6 +139,23 @@ jobs:
             --logger "console;verbosity=detailed" --blame-hang-timeout 8m
         working-directory: src
 
+  gateway:
+    # Runs src/samples/gateway: the gateway in front of a stand-in legacy API and a stand-in new API. Needs no Docker.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Move a route to the new API and count the rate limit
+        run: scripts/test-gateway.sh
+
   kubernetes:
     # Installs the committed chart in a kind cluster and checks the application there (scripts/test-k8s.sh).
     # GitHub-hosted Ubuntu runners come with Docker, kind, kubectl and helm.
