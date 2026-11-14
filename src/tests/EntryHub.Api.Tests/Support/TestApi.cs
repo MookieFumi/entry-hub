@@ -7,16 +7,16 @@ namespace EntryHub.Api.Tests.Support;
 /// </summary>
 internal sealed class TestApi : IDisposable
 {
-    private readonly ApiFactory _factory = new(TestDatabase.ConnectionString);
+    private readonly ApiFactory _factory;
 
-    private TestApi()
-    {
-    }
+    private TestApi(IReadOnlyDictionary<string, string?>? authentication) =>
+        _factory = new ApiFactory(TestDatabase.ConnectionString, authentication);
 
-    public static async Task<TestApi> StartAsync()
+    /// <param name="authentication">How the API validates tokens; the signing key of <see cref="TestTokens"/> by default.</param>
+    public static async Task<TestApi> StartAsync(IReadOnlyDictionary<string, string?>? authentication = null)
     {
         await TestDatabase.EnsureMigratedAsync();
-        return new TestApi();
+        return new TestApi(authentication);
     }
 
     public HttpClient Anonymous() => _factory.CreateClient();
