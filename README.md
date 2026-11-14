@@ -51,7 +51,10 @@ delegates to the handler. See `src/EntryHub.Api/Features/V1/Health/GetHealth` fo
 
 ## API v1
 
-Everything except `health` needs a JWT Bearer token. There are two roles: `Employee` (books and cancels their own
+Everything except `health` needs a JWT Bearer token, and the token must carry a `tenant_id` claim (a GUID). The tenant
+is the customer: every room and booking belongs to one, and a caller only ever sees the data of the tenant in their
+token. The tenant comes from the signed token and nowhere else (never a header, route or body), and a token without a
+valid `tenant_id` gets 403. There are two roles: `Employee` (books and cancels their own
 bookings, reads rooms) and `Facilities` (also creates rooms and cancels any booking).
 
 | Method and route | Slice | Who | Notes |
@@ -133,8 +136,9 @@ is in the repository.
 
 ```bash
 cd src/EntryHub.Api
-dotnet user-jwts create --role Employee --name ana        # prints the token
-dotnet user-jwts create --role Facilities --name fran
+# tenant_id is the default tenant that the migrations create (00000000-0000-0000-0000-000000000001)
+dotnet user-jwts create --role Employee --name ana --claim tenant_id=00000000-0000-0000-0000-000000000001
+dotnet user-jwts create --role Facilities --name fran --claim tenant_id=00000000-0000-0000-0000-000000000001
 curl -H "Authorization: Bearer <token>" http://localhost:5178/api/v1/rooms
 ```
 

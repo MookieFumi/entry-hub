@@ -1,3 +1,5 @@
+using EntryHub.Api.Tenancy;
+
 using Microsoft.AspNetCore.Authorization;
 
 namespace EntryHub.Api.Security;
@@ -24,10 +26,19 @@ public static class SecurityExtensions
                 options.TokenValidationParameters.ClockSkew = TimeSpan.FromSeconds(30);
             });
 
+        // The tenant comes only from the signed token. A token without a valid tenant_id claim is refused (403)
+        // on every protected endpoint, so no handler ever runs without a tenant.
         services
             .AddAuthorizationBuilder()
-            .AddPolicy(Policies.AnyEmployee, policy => policy.RequireRole(Roles.Employee, Roles.Facilities))
-            .AddPolicy(Policies.Facilities, policy => policy.RequireRole(Roles.Facilities));
+            .AddPolicy(Policies.AnyEmployee, policy => policy
+                .RequireAssertion(context => TenantClaims.Read(context.User) is not null)
+                .RequireRole(Roles.Employee, Roles.Facilities))
+            .AddPolicy(Policies.Facilities, policy => policy
+                .RequireAssertion(context => TenantClaims.Read(context.User) is not null)
+                .RequireRole(Roles.Facilities));
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantContext, HttpTenantContext>();
 
         // Object-level checks: the handlers call IAuthorizationService with the loaded booking.
         services.AddSingleton<IAuthorizationHandler, BookingAuthorizationHandler>();

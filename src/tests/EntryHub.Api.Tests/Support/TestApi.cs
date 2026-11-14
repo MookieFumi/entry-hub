@@ -28,6 +28,9 @@ internal sealed class TestApi : IDisposable
         return client;
     }
 
+    public HttpClient ClientForTenant(Guid tenantId, string subject, params string[] roles) =>
+        ClientWithToken(TestTokens.CreateForTenant(tenantId, subject, roles));
+
     public HttpClient ClientWithToken(string token)
     {
         var client = _factory.CreateClient();
