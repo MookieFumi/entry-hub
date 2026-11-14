@@ -28,5 +28,12 @@ internal sealed class TestApi : IDisposable
         return client;
     }
 
+    public HttpClient ClientWithToken(string token)
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
     public void Dispose() => _factory.Dispose();
 }

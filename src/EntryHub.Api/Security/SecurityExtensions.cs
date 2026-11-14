@@ -18,6 +18,10 @@ public static class SecurityExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters.NameClaimType = "sub";
                 options.TokenValidationParameters.RoleClaimType = "role";
+
+                // By default an expired token is still accepted for five more minutes (TokenValidationParameters
+                // .DefaultClockSkew). Thirty seconds covers the clock drift between servers without that window.
+                options.TokenValidationParameters.ClockSkew = TimeSpan.FromSeconds(30);
             });
 
         services

@@ -28,12 +28,17 @@ internal static class TestTokens
         ["Authentication:Schemes:Bearer:SigningKeys:0:Length"] = Key.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
     };
 
-    public static string Create(string subject, params string[] roles)
+    public static string Create(string subject, params string[] roles) => Sign(Describe(subject, roles));
+
+    /// <summary>
+    /// A descriptor for a valid token, valid for one hour, that a test can change before signing it.
+    /// </summary>
+    public static SecurityTokenDescriptor Describe(string subject, params string[] roles)
     {
         var claims = new List<Claim> { new("sub", subject) };
         claims.AddRange(roles.Select(role => new Claim("role", role)));
 
-        var descriptor = new SecurityTokenDescriptor
+        return new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
             Issuer = Issuer,
@@ -41,7 +46,7 @@ internal static class TestTokens
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Key), SecurityAlgorithms.HmacSha256),
         };
-
-        return new JsonWebTokenHandler().CreateToken(descriptor);
     }
+
+    public static string Sign(SecurityTokenDescriptor descriptor) => new JsonWebTokenHandler().CreateToken(descriptor);
 }
