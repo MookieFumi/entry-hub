@@ -1,6 +1,9 @@
-using EntryHub.Api.Data;
-using EntryHub.Api.Features.V1.Common;
+using System.Security.Claims;
 
+using EntryHub.Api.Data;
+using EntryHub.Api.Security;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace EntryHub.Api.Features.V1.Bookings.GetBooking;
@@ -18,9 +21,9 @@ public abstract record GetBookingResult
     public sealed record Forbidden : GetBookingResult;
 }
 
-public sealed class GetBookingHandler(EntryHubDbContext db)
+public sealed class GetBookingHandler(EntryHubDbContext db, IAuthorizationService authorization)
 {
-    public async Task<GetBookingResult> HandleAsync(Caller caller, Guid id, CancellationToken cancellationToken)
+    public async Task<GetBookingResult> HandleAsync(ClaimsPrincipal user, Guid id, CancellationToken cancellationToken)
     {
         var booking = await db.Bookings.AsNoTracking().SingleOrDefaultAsync(booking => booking.Id == id, cancellationToken);
 
@@ -29,7 +32,9 @@ public sealed class GetBookingHandler(EntryHubDbContext db)
             return new GetBookingResult.NotFound();
         }
 
-        return booking.OrganizerId == caller.Id || caller.IsFacilities
+        var result = await authorization.AuthorizeAsync(user, booking, BookingOperations.Read);
+
+        return result.Succeeded
             ? new GetBookingResult.Found(BookingResponse.From(booking))
             : new GetBookingResult.Forbidden();
     }

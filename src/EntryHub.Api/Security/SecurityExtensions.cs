@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+
 namespace EntryHub.Api.Security;
 
 public static class SecurityExtensions
@@ -22,6 +24,9 @@ public static class SecurityExtensions
             .AddAuthorizationBuilder()
             .AddPolicy(Policies.AnyEmployee, policy => policy.RequireRole(Roles.Employee, Roles.Facilities))
             .AddPolicy(Policies.Facilities, policy => policy.RequireRole(Roles.Facilities));
+
+        // Object-level checks: the handlers call IAuthorizationService with the loaded booking.
+        services.AddSingleton<IAuthorizationHandler, BookingAuthorizationHandler>();
 
         return services;
     }

@@ -1,3 +1,4 @@
+using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Features.V1.Bookings;
@@ -64,9 +65,12 @@ public class BookingsHandlerTests
     {
         await using var db = TestDatabase.CreateContext();
 
-        return await new CancelBookingHandler(db, TestPolicy.Default(), clock ?? TestClock.Default)
-            .HandleAsync(caller, bookingId, CancellationToken.None);
+        return await new CancelBookingHandler(db, TestPolicy.Default(), clock ?? TestClock.Default, TestAuthorization.Service)
+            .HandleAsync(TestUsers.PrincipalFor(caller), bookingId, CancellationToken.None);
     }
+
+    private static Task<GetBookingResult> GetAsync(EntryHubDbContext db, Caller caller, Guid bookingId) =>
+        new GetBookingHandler(db, TestAuthorization.Service).HandleAsync(TestUsers.PrincipalFor(caller), bookingId, CancellationToken.None);
 
     private static BookingResponse Created(CreateBookingResult result) =>
         Assert.IsType<CreateBookingResult.Created>(result).Booking;
@@ -84,7 +88,7 @@ public class BookingsHandlerTests
         Assert.Equal(Tuesday, booking.StartAt);
 
         await using var db = TestDatabase.CreateContext();
-        var found = Assert.IsType<GetBookingResult.Found>(await new GetBookingHandler(db).HandleAsync(ana, booking.Id, CancellationToken.None));
+        var found = Assert.IsType<GetBookingResult.Found>(await GetAsync(db, ana, booking.Id));
         Assert.Equal(booking.Id, found.Booking.Id);
     }
 
@@ -247,11 +251,10 @@ public class BookingsHandlerTests
         var ana = NewEmployee();
         var booking = Created(await BookAsync(ana, room.Id, Tuesday));
         await using var db = TestDatabase.CreateContext();
-        var handler = new GetBookingHandler(db);
 
-        Assert.IsType<GetBookingResult.Forbidden>(await handler.HandleAsync(NewEmployee(), booking.Id, CancellationToken.None));
-        Assert.IsType<GetBookingResult.Found>(await handler.HandleAsync(NewFacilities(), booking.Id, CancellationToken.None));
-        Assert.IsType<GetBookingResult.NotFound>(await handler.HandleAsync(ana, Guid.CreateVersion7(), CancellationToken.None));
+        Assert.IsType<GetBookingResult.Forbidden>(await GetAsync(db, NewEmployee(), booking.Id));
+        Assert.IsType<GetBookingResult.Found>(await GetAsync(db, NewFacilities(), booking.Id));
+        Assert.IsType<GetBookingResult.NotFound>(await GetAsync(db, ana, Guid.CreateVersion7()));
     }
 
     [Fact]

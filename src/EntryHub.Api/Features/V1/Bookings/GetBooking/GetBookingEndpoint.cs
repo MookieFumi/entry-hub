@@ -1,7 +1,5 @@
 using System.Security.Claims;
 
-using EntryHub.Api.Features.V1.Common;
-
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace EntryHub.Api.Features.V1.Bookings.GetBooking;
@@ -18,7 +16,7 @@ public static class GetBookingEndpoint
         GetBookingHandler handler,
         CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(Caller.From(user), id, cancellationToken);
+        var result = await handler.HandleAsync(user, id, cancellationToken);
 
         return result switch
         {
