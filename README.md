@@ -69,6 +69,22 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 | `GET /api/v1/bookings/mine` | `Bookings/ListMyBookings` | any role | paged; `includeCancelled=true` to see cancelled ones |
 | `POST /api/v1/bookings/{id}/cancel` | `Bookings/CancelBooking` | owner or Facilities | 204; 422 inside the notice period for Employees |
 
+### Tenant isolation
+
+Two barriers keep one tenant away from the data of another:
+
+1. **EF Core** filters `rooms` and `bookings` by the tenant of the request and stamps it on every insert. A context
+   with no tenant sees nothing and cannot write.
+2. **PostgreSQL Row-Level Security** (migration `AddRowLevelSecurity`): both tables have a policy that only matches the
+   tenant in the `app.tenant_id` setting, which `TenantConnectionInterceptor` sets each time a connection opens. A
+   query that forgets the EF filter still cannot read or write another tenant's rows.
+
+Row-Level Security only protects when the API connects as an ordinary role. A superuser, or a role with `BYPASSRLS`
+(Supabase's `postgres` role has it), skips every policy. The Helm chart of this repository connects as the `postgres`
+superuser of its own container, so the second barrier is not active there; use a dedicated role in any real
+deployment (see `guia-setup-infra-demo.md` in the plan). The reminders service reads one tenant at a time for the same
+reason, setting `app.tenant_id` inside a transaction.
+
 ### Errors
 
 - **400**: the body has the wrong shape (validation built into .NET, `AddValidation`). The response lists the fields.
