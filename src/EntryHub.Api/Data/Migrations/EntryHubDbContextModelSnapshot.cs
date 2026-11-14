@@ -18,7 +18,7 @@ namespace EntryHub.Api.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
@@ -60,6 +60,9 @@ namespace EntryHub.Api.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -69,7 +72,7 @@ namespace EntryHub.Api.Data.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.HasIndex("OrganizerId", "Status", "EndAt");
+                    b.HasIndex("TenantId", "OrganizerId", "Status", "EndAt");
 
                     b.ToTable("bookings", null, t =>
                         {
@@ -103,14 +106,38 @@ namespace EntryHub.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Floor", "Capacity");
+
+                    b.ToTable("rooms", (string)null);
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Tenants.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("Floor", "Capacity");
-
-                    b.ToTable("rooms", (string)null);
+                    b.ToTable("tenants", (string)null);
                 });
 
             modelBuilder.Entity("EntryHub.Api.Domain.Bookings.Booking", b =>
@@ -118,6 +145,21 @@ namespace EntryHub.Api.Data.Migrations
                     b.HasOne("EntryHub.Api.Domain.Rooms.Room", null)
                         .WithMany()
                         .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Rooms.Room", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

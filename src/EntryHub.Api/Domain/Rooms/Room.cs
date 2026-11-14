@@ -1,11 +1,15 @@
+using EntryHub.Api.Tenancy;
+
 namespace EntryHub.Api.Domain.Rooms;
 
 /// <summary>
 /// A meeting room that employees can book.
 /// </summary>
-public sealed class Room
+public sealed class Room : ITenantOwned
 {
     public Guid Id { get; init; }
+
+    public Guid TenantId { get; set; }
 
     public required string Name { get; set; }
 

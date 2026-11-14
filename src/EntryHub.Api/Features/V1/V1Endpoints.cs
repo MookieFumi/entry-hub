@@ -1,6 +1,8 @@
 using EntryHub.Api.Features.V1.Bookings;
+using EntryHub.Api.Features.V1.CurrentUser;
 using EntryHub.Api.Features.V1.Health.GetHealth;
 using EntryHub.Api.Features.V1.Rooms;
+using EntryHub.Api.Features.V1.Rules;
 
 namespace EntryHub.Api.Features.V1;
 
@@ -22,6 +24,8 @@ public static class V1Endpoints
         var v1 = app.MapGroup("/api/v1");
 
         GetHealthEndpoint.Map(v1);
+        v1.MapMeEndpoints();
+        v1.MapRulesEndpoints();
         v1.MapRoomsEndpoints();
         v1.MapBookingsEndpoints();
 

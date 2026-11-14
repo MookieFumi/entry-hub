@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 
+using EntryHub.Api.Cors;
 using EntryHub.Api.Data;
 using EntryHub.Api.Documentation;
 using EntryHub.Api.Errors;
@@ -26,6 +27,7 @@ builder.Services.AddValidation();
 // Every error the framework writes (validation, unhandled exceptions) becomes application/problem+json.
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DatabaseUnavailableHandler>();
+builder.Services.AddEntryHubCors();
 builder.Services.AddEntryHubSecurity();
 builder.Services.AddEntryHubOpenApi();
 builder.Services.AddFeatureHandlers();
@@ -49,6 +51,10 @@ if (app.Environment.IsDevelopment() || args is ["migrate"])
         return;
     }
 }
+
+// Before authentication, so a preflight (which carries no token) is answered and so a 401 still reaches the browser
+// with its CORS headers instead of showing up there as a CORS error.
+app.UseCors(CorsExtensions.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,11 +1,15 @@
+using EntryHub.Api.Tenancy;
+
 namespace EntryHub.Api.Domain.Bookings;
 
 /// <summary>
 /// A room reserved for a half-open time range: it includes <see cref="StartAt"/> and excludes <see cref="EndAt"/>.
 /// </summary>
-public sealed class Booking
+public sealed class Booking : ITenantOwned
 {
     public Guid Id { get; init; }
+
+    public Guid TenantId { get; set; }
 
     public Guid RoomId { get; init; }
 

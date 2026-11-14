@@ -1,5 +1,6 @@
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
+using EntryHub.Api.Features.V1.Common;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoom;
 using EntryHub.Api.Features.V1.Rooms.ListRooms;
@@ -100,9 +101,9 @@ public class RoomsHandlerTests
         }
 
         var list = new ListRoomsHandler(db);
-        var all = await list.HandleAsync(new ListRoomsQuery(floor, null, null, null), CancellationToken.None);
-        var big = await list.HandleAsync(new ListRoomsQuery(floor, 8, null, null), CancellationToken.None);
-        var secondPage = await list.HandleAsync(new ListRoomsQuery(floor, null, 2, 3), CancellationToken.None);
+        var all = await list.HandleAsync(new Caller("ana", false), new ListRoomsQuery(floor, null, null, null, null), CancellationToken.None);
+        var big = await list.HandleAsync(new Caller("ana", false), new ListRoomsQuery(floor, 8, null, null, null), CancellationToken.None);
+        var secondPage = await list.HandleAsync(new Caller("ana", false), new ListRoomsQuery(floor, null, null, 2, 3), CancellationToken.None);
 
         Assert.Equal(4, all.TotalCount);
         Assert.Equal(2, big.TotalCount);

@@ -63,6 +63,9 @@ for _ in $(seq 30); do
   sleep 1
 done
 
+# The tenant the migrations create for the data that existed before tenants did.
+tenant="00000000-0000-0000-0000-000000000001"
+
 base64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
 
 # A token signed with the key the chart was installed with, the same shape `dotnet user-jwts` creates.
@@ -70,8 +73,8 @@ token() {
   local now header payload signature
   now="$(date +%s)"
   header="$(printf '{"alg":"HS256","typ":"JWT"}' | base64url)"
-  payload="$(printf '{"sub":"%s","role":"%s","iss":"%s","aud":"%s","nbf":%d,"exp":%d}' \
-    "$1" "$2" "$issuer" "$audience" "$now" "$((now + 600))" | base64url)"
+  payload="$(printf '{"sub":"%s","role":"%s","tenant_id":"%s","iss":"%s","aud":"%s","nbf":%d,"exp":%d}' \
+    "$1" "$2" "$tenant" "$issuer" "$audience" "$now" "$((now + 600))" | base64url)"
   signature="$(printf '%s.%s' "$header" "$payload" \
     | openssl dgst -sha256 -mac HMAC -macopt "hexkey:$(printf '%s' "$signing_key" | openssl base64 -d -A | od -An -v -tx1 | tr -d " \n")" -binary \
     | base64url)"
@@ -93,8 +96,8 @@ curl -sf "http://localhost:$port/api/v1/rooms/$room_id" -H "Authorization: Beare
 # what is under test is the reminders service finding it.
 echo "The reminders service reads from PostgreSQL:"
 kubectl exec postgres-statefulset-0 -- env PGPASSWORD="$password" psql -U postgres -d entryhub -v ON_ERROR_STOP=1 -c \
-  "INSERT INTO bookings (\"Id\", \"RoomId\", \"OrganizerId\", \"Title\", \"StartAt\", \"EndAt\", \"Attendees\", \"Status\", \"CreatedAt\")
-   VALUES (gen_random_uuid(), '$room_id', 'ana', 'Kind check', now() + interval '5 minutes', now() + interval '65 minutes', 4, 'Confirmed', now());"
+  "INSERT INTO bookings (\"Id\", \"TenantId\", \"RoomId\", \"OrganizerId\", \"Title\", \"StartAt\", \"EndAt\", \"Attendees\", \"Status\", \"CreatedAt\")
+   VALUES (gen_random_uuid(), '$tenant', '$room_id', 'ana', 'Kind check', now() + interval '5 minutes', now() + interval '65 minutes', 4, 'Confirmed', now());"
 for _ in $(seq 40); do
   if kubectl logs deployment/reminders-deployment | grep -q 'Reminder for ana: "Kind check"'; then
     kubectl logs deployment/reminders-deployment | grep 'Reminder for ana'

@@ -28,7 +28,8 @@ internal static class Tokens
 
     public static string Create(string subject, params string[] roles)
     {
-        var claims = new List<Claim> { new("sub", subject) };
+        // The tenant the migrations create for the data that existed before tenants did.
+        var claims = new List<Claim> { new("sub", subject), new("tenant_id", "00000000-0000-0000-0000-000000000001") };
         claims.AddRange(roles.Select(role => new Claim("role", role)));
 
         var descriptor = new SecurityTokenDescriptor

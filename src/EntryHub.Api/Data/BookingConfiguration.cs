@@ -1,5 +1,6 @@
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
+using EntryHub.Api.Domain.Tenants;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -17,7 +18,8 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(booking => booking.Title).HasMaxLength(120);
         builder.Property(booking => booking.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasOne<Room>().WithMany().HasForeignKey(booking => booking.RoomId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(booking => new { booking.OrganizerId, booking.Status, booking.EndAt });
+        builder.HasOne<Tenant>().WithMany().HasForeignKey(booking => booking.TenantId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(booking => new { booking.TenantId, booking.OrganizerId, booking.Status, booking.EndAt });
 
         // The rule that two confirmed bookings of one room cannot overlap is an exclusion constraint that EF Core
         // cannot model. It is created with SQL in the AddBookings migration (see that file).
