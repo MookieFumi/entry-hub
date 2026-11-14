@@ -153,6 +153,9 @@ probes under the `Probes` tag. Do not route `/health` or `/alive` through an ing
 
 ### Get a token
 
+A longer walkthrough (starting the API alone, Supabase Auth tokens, a second tenant, and a curl call for every endpoint)
+is in [docs/local-development.md](docs/local-development.md).
+
 Tokens for local development come from the .NET SDK. The signing key stays in your user secrets, so nothing secret
 is in the repository.
 
