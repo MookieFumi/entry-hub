@@ -6,9 +6,11 @@ using Aspire.Hosting.Testing;
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
+using EntryHub.Api.Domain.Tenants;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Security;
+using EntryHub.Api.Tenancy;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +51,9 @@ public class SystemTests(EntryHubSystem system)
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // The tenant the migrations create for the data that existed before tenants did.
+    private static readonly FixedTenantContext DefaultTenant = new(Tenant.DefaultId);
+
     [Fact]
     public async Task The_reminders_service_marks_a_booking_about_to_start_as_reminded()
     {
@@ -59,7 +64,7 @@ public class SystemTests(EntryHubSystem system)
 
         // The booking rules only allow office hours, so the booking goes straight into the database: what is
         // under test is the reminders service finding it, not how the API creates it.
-        await using (var db = new EntryHubDbContext(options))
+        await using (var db = new EntryHubDbContext(options, DefaultTenant))
         {
             var room = new Room { Id = Guid.CreateVersion7(), Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 8, CreatedAt = now };
             db.Rooms.Add(room);
@@ -83,7 +88,7 @@ public class SystemTests(EntryHubSystem system)
         DateTimeOffset? reminderSentAt = null;
         while (reminderSentAt is null && !timeout.IsCancellationRequested)
         {
-            await using var db = new EntryHubDbContext(options);
+            await using var db = new EntryHubDbContext(options, DefaultTenant);
             reminderSentAt = await db.Bookings
                 .Where(booking => booking.Id == bookingId)
                 .Select(booking => booking.ReminderSentAt)

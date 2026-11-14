@@ -1,4 +1,5 @@
 using EntryHub.Api.Data;
+using EntryHub.Api.Tenancy;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -37,13 +38,16 @@ internal static class TestDatabase
     /// </summary>
     public static Task EnsureMigratedAsync() => Migrated.Value;
 
-    public static EntryHubDbContext CreateContext(string? connectionString = null)
+    /// <summary>
+    /// A context for one tenant, <see cref="TestTenants.Default"/> unless the test says otherwise.
+    /// </summary>
+    public static EntryHubDbContext CreateContext(string? connectionString = null, Guid? tenantId = null)
     {
         var options = new DbContextOptionsBuilder<EntryHubDbContext>()
             .UseNpgsql(connectionString ?? ConnectionString)
             .Options;
 
-        return new EntryHubDbContext(options);
+        return new EntryHubDbContext(options, new FixedTenantContext(tenantId ?? TestTenants.Default));
     }
 
     private static string StartContainer()
@@ -63,5 +67,12 @@ internal static class TestDatabase
     {
         await using var db = CreateContext();
         await db.Database.MigrateAsync();
+
+        // Rooms and bookings need their tenant to exist. The tests share these two across the whole run.
+        foreach (var (id, name) in new[] { (TestTenants.Default, "Tests A"), (TestTenants.Other, "Tests B") })
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO tenants (\"Id\", \"Name\", \"CreatedAt\") VALUES ({id}, {name}, now()) ON CONFLICT DO NOTHING");
+        }
     }
 }

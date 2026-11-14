@@ -51,7 +51,10 @@ delegates to the handler. See `src/EntryHub.Api/Features/V1/Health/GetHealth` fo
 
 ## API v1
 
-Everything except `health` needs a JWT Bearer token. There are two roles: `Employee` (books and cancels their own
+Everything except `health` needs a JWT Bearer token, and the token must carry a `tenant_id` claim (a GUID). The tenant
+is the customer: every room and booking belongs to one, and a caller only ever sees the data of the tenant in their
+token. The tenant comes from the signed token and nowhere else (never a header, route or body), and a token without a
+valid `tenant_id` gets 403. There are two roles: `Employee` (books and cancels their own
 bookings, reads rooms) and `Facilities` (also creates rooms and cancels any booking).
 
 | Method and route | Slice | Who | Notes |
@@ -65,6 +68,22 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 | `GET /api/v1/bookings/{id}` | `Bookings/GetBooking` | owner or Facilities | 200, 403 or 404 |
 | `GET /api/v1/bookings/mine` | `Bookings/ListMyBookings` | any role | paged; `includeCancelled=true` to see cancelled ones |
 | `POST /api/v1/bookings/{id}/cancel` | `Bookings/CancelBooking` | owner or Facilities | 204; 422 inside the notice period for Employees |
+
+### Tenant isolation
+
+Two barriers keep one tenant away from the data of another:
+
+1. **EF Core** filters `rooms` and `bookings` by the tenant of the request and stamps it on every insert. A context
+   with no tenant sees nothing and cannot write.
+2. **PostgreSQL Row-Level Security** (migration `AddRowLevelSecurity`): both tables have a policy that only matches the
+   tenant in the `app.tenant_id` setting, which `TenantConnectionInterceptor` sets each time a connection opens. A
+   query that forgets the EF filter still cannot read or write another tenant's rows.
+
+Row-Level Security only protects when the API connects as an ordinary role. A superuser, or a role with `BYPASSRLS`
+(Supabase's `postgres` role has it), skips every policy. The Helm chart of this repository connects as the `postgres`
+superuser of its own container, so the second barrier is not active there; use a dedicated role in any real
+deployment (see `guia-setup-infra-demo.md` in the plan). The reminders service reads one tenant at a time for the same
+reason, setting `app.tenant_id` inside a transaction.
 
 ### Errors
 
@@ -133,10 +152,39 @@ is in the repository.
 
 ```bash
 cd src/EntryHub.Api
-dotnet user-jwts create --role Employee --name ana        # prints the token
-dotnet user-jwts create --role Facilities --name fran
+# tenant_id is the default tenant that the migrations create (00000000-0000-0000-0000-000000000001)
+dotnet user-jwts create --role Employee --name ana --claim tenant_id=00000000-0000-0000-0000-000000000001
+dotnet user-jwts create --role Facilities --name fran --claim tenant_id=00000000-0000-0000-0000-000000000001
 curl -H "Authorization: Bearer <token>" http://localhost:5178/api/v1/rooms
 ```
+
+### CORS for the browser front end
+
+The API answers the preflight and marks its responses for the origins listed in `Cors:AllowedOrigins` (environment
+variable `Cors__AllowedOrigins__0`, `__1`, and so on). The list is empty by default, which allows none. Development
+allows `http://localhost:5173` (Vite). In production set the URL of the front end, for example
+`https://entryhub-web.pages.dev`; `https://*.entryhub-web.pages.dev` also allows the preview deployments of Cloudflare
+Pages. A lone `*` is refused and the API does not start. Allowed methods are GET, POST, PUT, PATCH, DELETE and
+OPTIONS; allowed request headers are `Authorization` and `Content-Type`; `Retry-After` and `Location` are exposed to
+the browser. Credentials are not allowed: the API reads a Bearer header, never cookies. The CORS middleware runs
+before authentication, so preflights need no token and a 401 or 503 still reaches the page with its headers.
+
+### Use an OpenID Connect provider (Supabase Auth)
+
+Instead of a signing key, the API can trust an OpenID Connect provider and fetch its public keys (JWKS). Set these
+settings (environment variables use `__`, for example `Authentication__Schemes__Bearer__Authority`):
+
+| Setting | Value for Supabase Auth |
+|---|---|
+| `Authentication:Schemes:Bearer:Authority` | `https://<project-ref>.supabase.co/auth/v1` |
+| `Authentication:Schemes:Bearer:ValidAudiences:0` | `authenticated` |
+| `Authentication:RoleClaim` | `user_role` |
+| `Authentication:Schemes:Bearer:MetadataAddress` | Only if the provider serves its discovery document somewhere else |
+
+`Authentication:RoleClaim` names the claim that holds the application role (`Employee` or `Facilities`) and defaults to
+`role`. Supabase uses `role` for its own PostgreSQL role (`authenticated`), so the role travels in `user_role` and
+`role` grants nothing. The tenant travels in `tenant_id`. A Custom Access Token Hook in the Supabase project adds both
+claims; the setup guide has the SQL. With an `Authority` set, tokens signed with a shared key are no longer accepted.
 
 In Development the API applies the EF Core migrations on startup. To add one after changing the model:
 

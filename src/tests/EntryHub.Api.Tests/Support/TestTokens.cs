@@ -30,12 +30,24 @@ internal static class TestTokens
 
     public static string Create(string subject, params string[] roles) => Sign(Describe(subject, roles));
 
+    public static string CreateForTenant(Guid tenantId, string subject, params string[] roles) =>
+        Sign(Describe(subject, roles, tenantId));
+
     /// <summary>
     /// A descriptor for a valid token, valid for one hour, that a test can change before signing it.
     /// </summary>
-    public static SecurityTokenDescriptor Describe(string subject, params string[] roles)
+    public static SecurityTokenDescriptor Describe(string subject, params string[] roles) =>
+        Describe(subject, roles, TestTenants.Default);
+
+    // A null tenantId leaves the tenant_id claim out, for the tests of tokens that have none.
+    public static SecurityTokenDescriptor Describe(string subject, string[] roles, Guid? tenantId)
     {
         var claims = new List<Claim> { new("sub", subject) };
+        if (tenantId is { } tenant)
+        {
+            claims.Add(new Claim("tenant_id", tenant.ToString()));
+        }
+
         claims.AddRange(roles.Select(role => new Claim("role", role)));
 
         return new SecurityTokenDescriptor
