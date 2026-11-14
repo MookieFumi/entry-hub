@@ -178,6 +178,26 @@ OPTIONS; allowed request headers are `Authorization` and `Content-Type`; `Retry-
 the browser. Credentials are not allowed: the API reads a Bearer header, never cookies. The CORS middleware runs
 before authentication, so preflights need no token and a 401 or 503 still reaches the page with its headers.
 
+### Rate limiting
+
+Every request counts against a fixed window: per **tenant** for callers whose token has a tenant (all the users of a
+tenant share the limit, so one customer cannot use up the capacity of the others), per user when the token has no
+tenant, and per IP address when there is no token. Going over the limit returns `429` as `application/problem+json`
+with a `Retry-After` header (seconds), and the CORS headers are kept so the browser can read it. `/health` and `/alive`
+are never limited, so the platform can ask them at any rate. The defaults are small because the demo runs on App Service
+F1, which has little CPU.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `RateLimiting:Enabled` | `true` | `false` turns the limiter off |
+| `RateLimiting:PermitLimit` | `120` | Requests per window for each tenant (or user without tenant) |
+| `RateLimiting:AnonymousPermitLimit` | `30` | Requests per window for each IP address without a token |
+| `RateLimiting:WindowSeconds` | `60` | Length of the window |
+
+The limiter keeps its counters in the memory of each instance, so with several instances the real limit is the sum of
+their limits. Behind a proxy or load balancer, the IP address the API sees is the proxy's unless forwarded headers are
+configured, which makes all anonymous callers share one limit.
+
 ### Use an OpenID Connect provider (Supabase Auth)
 
 Instead of a signing key, the API can trust an OpenID Connect provider and fetch its public keys (JWKS). Set these
