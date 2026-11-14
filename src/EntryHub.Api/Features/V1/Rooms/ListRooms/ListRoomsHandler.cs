@@ -7,11 +7,16 @@ namespace EntryHub.Api.Features.V1.Rooms.ListRooms;
 
 public sealed class ListRoomsHandler(EntryHubDbContext db)
 {
-    public async Task<PagedResponse<RoomResponse>> HandleAsync(ListRoomsQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResponse<RoomResponse>> HandleAsync(Caller caller, ListRoomsQuery query, CancellationToken cancellationToken)
     {
         var paging = Paging.Normalize(query.Page, query.PageSize);
 
-        var rooms = db.Rooms.AsNoTracking().Where(room => room.IsActive);
+        var rooms = db.Rooms.AsNoTracking();
+
+        if (!(caller.IsFacilities && query.IncludeInactive == true))
+        {
+            rooms = rooms.Where(room => room.IsActive);
+        }
 
         if (query.Floor is { } floor)
         {

@@ -2,6 +2,7 @@ using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Bookings.CancelBooking;
 using EntryHub.Api.Features.V1.Bookings.CreateBooking;
 using EntryHub.Api.Features.V1.Bookings.GetBooking;
+using EntryHub.Api.Features.V1.Bookings.ListBookings;
 using EntryHub.Api.Features.V1.Bookings.ListMyBookings;
 using EntryHub.Api.Security;
 
@@ -22,6 +23,7 @@ public static class BookingsEndpoints
         var bookings = v1.MapGroup("/bookings").WithTags("Bookings").RequireAuthorization(Policies.AnyEmployee);
 
         CreateBookingEndpoint.Map(bookings);
+        ListBookingsEndpoint.Map(bookings);
         ListMyBookingsEndpoint.Map(bookings);
         GetBookingEndpoint.Map(bookings);
         CancelBookingEndpoint.Map(bookings);

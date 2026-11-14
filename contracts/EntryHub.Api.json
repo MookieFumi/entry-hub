@@ -36,6 +36,61 @@
         }
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Says who is calling: user, role and tenant.",
+        "operationId": "GetMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/rules": {
+      "get": {
+        "tags": [
+          "Rules"
+        ],
+        "summary": "Gets the booking rules that apply to the caller.",
+        "operationId": "GetBookingRules",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/rooms": {
       "post": {
         "tags": [
@@ -125,6 +180,14 @@
             }
           },
           {
+            "name": "IncludeInactive",
+            "in": "query",
+            "description": "Also return deactivated rooms. Only Facilities get them; for anyone else it is ignored.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "Page",
             "in": "query",
             "description": "One-based page number; defaults to 1.",
@@ -171,6 +234,81 @@
       }
     },
     "/api/v1/rooms/{id}": {
+      "patch": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Edits a room or deactivates it. Facilities only.",
+        "operationId": "UpdateRoom",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
       "get": {
         "tags": [
           "Rooms"
@@ -201,6 +339,182 @@
           },
           "404": {
             "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/rooms/availability": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Lists the rooms that are free for a time slot.",
+        "operationId": "SearchRoomAvailability",
+        "parameters": [
+          {
+            "name": "From",
+            "in": "query",
+            "description": "Start of the slot to book.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "description": "End of the slot to book.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Attendees",
+            "in": "query",
+            "description": "People that must fit; the room needs at least this capacity.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "MinCapacity",
+            "in": "query",
+            "description": "Only rooms that fit at least this many people.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Floor",
+            "in": "query",
+            "description": "Only rooms on this floor.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/rooms/{id}/schedule": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Gets the busy ranges of a room in a time window.",
+        "operationId": "GetRoomSchedule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "From",
+            "in": "query",
+            "description": "Start of the window.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "description": "End of the window; at most 31 days after From.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomScheduleEntry"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -304,6 +618,93 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Lists the bookings of every person, filtered, with paging. Facilities only.",
+        "operationId": "ListBookings",
+        "parameters": [
+          {
+            "name": "RoomId",
+            "in": "query",
+            "description": "Only bookings of this room.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "From",
+            "in": "query",
+            "description": "Only bookings that end after this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "description": "Only bookings that start before this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "description": "Only bookings in this status; every status when omitted.",
+            "schema": {
+              "$ref": "#/components/schemas/BookingStatus"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "One-based page number; defaults to 1.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Items per page; defaults to 20 and is capped at 100.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseOfBookingResponse"
                 }
               }
             }
@@ -684,6 +1085,17 @@
           }
         }
       },
+      "DayOfWeek": {
+        "enum": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ]
+      },
       "GetHealthResponse": {
         "required": [
           "status",
@@ -743,6 +1155,34 @@
                 "type": "string"
               }
             }
+          }
+        }
+      },
+      "MeResponse": {
+        "required": [
+          "userId",
+          "role",
+          "tenantId",
+          "tenantName"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The `sub` claim of the token; the same value as `organizerId` on the bookings of this person."
+          },
+          "role": {
+            "type": "string",
+            "description": "`Employee` or `Facilities`."
+          },
+          "tenantId": {
+            "type": "string",
+            "description": "The customer this person belongs to, from the token.",
+            "format": "uuid"
+          },
+          "tenantName": {
+            "type": "string",
+            "description": "The display name of that customer."
           }
         }
       },
@@ -949,6 +1389,56 @@
           }
         }
       },
+      "RoomScheduleEntry": {
+        "required": [
+          "bookingId",
+          "startAt",
+          "endAt",
+          "isMine",
+          "title",
+          "organizerId"
+        ],
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The booking; `null` when the caller may not see it.",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "description": "Start of the booking.",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "description": "End of the booking.",
+            "format": "date-time"
+          },
+          "isMine": {
+            "type": "boolean",
+            "description": "The caller organized this booking."
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Title of the booking; `null` when the caller may not see it."
+          },
+          "organizerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Organizer of the booking; `null` when the caller may not see it."
+          }
+        },
+        "description": "One busy range of a room. Everyone sees when it is taken; only Facilities and the organizer see what it is."
+      },
       "RoomStatus": {
         "enum": [
           "Free",
@@ -996,6 +1486,108 @@
         },
         "description": "A booking that breaks one or more booking rules."
       },
+      "RulesResponse": {
+        "required": [
+          "minDurationMinutes",
+          "maxDurationMinutes",
+          "slotMinutes",
+          "officeOpens",
+          "officeCloses",
+          "officeDays",
+          "timeZone",
+          "minLeadTimeMinutes",
+          "maxAdvanceDays",
+          "cancellationNoticeMinutes",
+          "maxActiveBookings"
+        ],
+        "type": "object",
+        "properties": {
+          "minDurationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Shortest booking.",
+            "format": "int32"
+          },
+          "maxDurationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Longest booking.",
+            "format": "int32"
+          },
+          "slotMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Starts and ends fall on multiples of this length.",
+            "format": "int32"
+          },
+          "officeOpens": {
+            "type": "string",
+            "description": "First start time of the day, `HH:mm`, in TimeZone."
+          },
+          "officeCloses": {
+            "type": "string",
+            "description": "Last end time of the day, `HH:mm`, in TimeZone."
+          },
+          "officeDays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayOfWeek"
+            },
+            "description": "Days of the week rooms can be booked."
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA time zone of the office: the one the hours and the days refer to."
+          },
+          "minLeadTimeMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "A booking starts at least this many minutes from now.",
+            "format": "int32"
+          },
+          "maxAdvanceDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "A booking starts at most this many days from now.",
+            "format": "int32"
+          },
+          "cancellationNoticeMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "An Employee can cancel until this many minutes before the start.",
+            "format": "int32"
+          },
+          "maxActiveBookings": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Active bookings the caller can hold; `null` when there is no limit.",
+            "format": "int32"
+          }
+        },
+        "description": "The booking rules a client can show or check before it sends a booking. The server still decides: a booking that\nbreaks a rule gets a 422 with the code of the rule."
+      },
       "RuleViolation": {
         "required": [
           "code",
@@ -1039,6 +1631,69 @@
             ]
           }
         }
+      },
+      "UpdateRoomRequest": {
+        "required": [
+          "name",
+          "floor",
+          "capacity",
+          "equipment",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New name; unique among the rooms of the tenant."
+          },
+          "floor": {
+            "maximum": 100,
+            "minimum": -5,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "New floor.",
+            "format": "int32"
+          },
+          "capacity": {
+            "maximum": 500,
+            "minimum": 1,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "New capacity.",
+            "format": "int32"
+          },
+          "equipment": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "New equipment list."
+          },
+          "isActive": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "`false` takes the room out of the listings and out of new bookings; the bookings it already has stay."
+          }
+        },
+        "description": "Fields left out are not changed. Equipment replaces the whole list when it is sent."
       }
     },
     "securitySchemes": {
@@ -1053,6 +1708,12 @@
   "tags": [
     {
       "name": "Health"
+    },
+    {
+      "name": "Me"
+    },
+    {
+      "name": "Rules"
     },
     {
       "name": "Rooms"

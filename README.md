@@ -60,12 +60,18 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 | Method and route | Slice | Who | Notes |
 |---|---|---|---|
 | `GET /api/v1/health` | `Health/GetHealth` | anyone | 200, or 503 when PostgreSQL does not answer |
+| `GET /api/v1/me` | `CurrentUser/GetMe` | any role | user id, role, tenant id and tenant name |
+| `GET /api/v1/rules` | `Rules/GetRules` | any role | the booking rules the server enforces (durations, hours, notice, limit) |
 | `POST /api/v1/rooms` | `Rooms/CreateRoom` | Facilities | 201, 400 on a bad body, 409 when the name is taken |
 | `GET /api/v1/rooms/{id}` | `Rooms/GetRoom` | any role | 200 or 404 |
-| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor` and `minCapacity`, paging with `page` and `pageSize` |
+| `PATCH /api/v1/rooms/{id}` | `Rooms/UpdateRoom` | Facilities | edit or deactivate (`isActive=false`); 404, 409 when the name is taken |
+| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor` and `minCapacity`, paging with `page` and `pageSize`; Facilities can add `includeInactive=true` |
+| `GET /api/v1/rooms/availability` | `Rooms/SearchAvailability` | any role | rooms free in `from`..`to` (max 31 days), filters `attendees`, `minCapacity`, `floor` |
+| `GET /api/v1/rooms/{id}/schedule` | `Rooms/GetRoomSchedule` | any role | busy ranges in `from`..`to`; title and organizer only for Facilities and the organizer |
 | `GET /api/v1/rooms/{id}/occupancy` | `Rooms/StreamRoomOccupancy` | any role | Server-Sent Events; free or occupied every 5 seconds |
 | `POST /api/v1/bookings` | `Bookings/CreateBooking` | any role | 201, 400 bad body, 422 broken rule, 409 slot taken |
 | `GET /api/v1/bookings/{id}` | `Bookings/GetBooking` | owner or Facilities | 200, 403 or 404 |
+| `GET /api/v1/bookings` | `Bookings/ListBookings` | Facilities | everyone's bookings; filters `roomId`, `from`, `to`, `status`, paging |
 | `GET /api/v1/bookings/mine` | `Bookings/ListMyBookings` | any role | paged; `includeCancelled=true` to see cancelled ones |
 | `POST /api/v1/bookings/{id}/cancel` | `Bookings/CancelBooking` | owner or Facilities | 204; 422 inside the notice period for Employees |
 

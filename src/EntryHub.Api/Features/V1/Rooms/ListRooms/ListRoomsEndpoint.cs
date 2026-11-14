@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 using EntryHub.Api.Features.V1.Common;
 
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -11,7 +13,8 @@ public static class ListRoomsEndpoint
 
     private static async Task<Ok<PagedResponse<RoomResponse>>> HandleAsync(
         [AsParameters] ListRoomsQuery query,
+        ClaimsPrincipal user,
         ListRoomsHandler handler,
         CancellationToken cancellationToken) =>
-        TypedResults.Ok(await handler.HandleAsync(query, cancellationToken));
+        TypedResults.Ok(await handler.HandleAsync(Caller.From(user), query, cancellationToken));
 }
