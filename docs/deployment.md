@@ -92,25 +92,32 @@ audience `api://AzureADTokenExchange`. If `azure/login` still fails with `AADSTS
 identity record found for presented assertion subject"), the error prints the exact subject GitHub sent: create the
 credential with that text.
 
-## GitHub: variables, secrets and environment
+## GitHub: environment, variables and secret
 
-In the GitHub web, on the repository:
+In the GitHub web, on the repository `mookie-studio/entry-hub`:
 
 1. *Settings → Environments → New environment* named `production`. Tick *Required reviewers* and add the people who
    must approve a deployment, and under *Deployment branches and tags* choose *Selected branches and tags* and add a
    rule of type *Tag* with the pattern `v*`. (Required reviewers may not be available on a private repository of a free
    account.)
-2. *Settings → Secrets and variables → Actions → Variables → New repository variable* for each variable below.
-3. *Settings → Environments → production → Environment secrets → Add environment secret* for the secret below.
+2. Create the five **repository variables** in *Settings → Secrets and variables → Actions → Variables tab → New
+   repository variable* (fill in *Name* and *Value*, then *Add variable*). They are not environment variables.
+3. Create the **secret** in *Settings → Environments → production → Environment secrets → Add environment secret*.
 
-| Where | Name | Kind | Value |
-|---|---|---|---|
-| Repository variable | `AZURE_WEBAPP_NAME` | variable | Name of the App Service. While empty, nothing is deployed |
-| Repository variable | `API_URL` | variable | Public URL of the API without a trailing slash, for example `https://entryhub-demo.azurewebsites.net` |
-| Repository variable | `AZURE_CLIENT_ID` | variable | `appId` of the app registration (not a secret) |
-| Repository variable | `AZURE_TENANT_ID` | variable | Directory (tenant) id of Azure |
-| Repository variable | `AZURE_SUBSCRIPTION_ID` | variable | Subscription id |
-| Environment `production` | `MIGRATIONS_CONNECTION_STRING` | secret | Npgsql connection string of the **owner** role of the database (session pooler on Supabase) |
+For each value, where to copy it in the Azure portal and where it goes in GitHub:
+
+- `AZURE_CLIENT_ID`: copy *Microsoft Entra ID → App registrations → `entryhub-github` → Overview → Application
+  (client) ID*. Paste it as a repository variable. It is not a secret.
+- `AZURE_TENANT_ID`: copy *Directory (tenant) ID* from the same *Overview* page. Paste it as a repository variable.
+- `AZURE_SUBSCRIPTION_ID`: copy *Subscriptions →* your subscription *→ Overview → Subscription ID*. Paste it as a
+  repository variable.
+- `AZURE_WEBAPP_NAME`: copy the name of the App Service (*App Services →* your app, the title of the page). Paste it as
+  a repository variable. While it is empty, nothing is deployed.
+- `API_URL`: copy *App Services →* your app *→ Overview → Default domain* and paste it as `https://<default-domain>`
+  with no trailing slash, as a repository variable.
+- `MIGRATIONS_CONNECTION_STRING`: the Npgsql connection string of the **owner** role of the database (`postgres.<ref>`
+  on the Supabase session pooler, see [supabase-setup.md](supabase-setup.md)). Paste it as an **environment secret** of
+  `production`, not as a variable and not as a repository secret.
 
 The API itself gets its settings in the App Service, not from GitHub: in the portal, *Settings → Environment variables
 → App settings* (*Advanced edit* takes a JSON list of `name` and `value`), or `az webapp config appsettings set`:
