@@ -198,6 +198,21 @@ The limiter keeps its counters in the memory of each instance, so with several i
 their limits. Behind a proxy or load balancer, the IP address the API sees is the proxy's unless forwarded headers are
 configured, which makes all anonymous callers share one limit.
 
+### Demo data
+
+With `Demo__Seed=true` (the `Demo:Seed` setting) the API creates two demo customers when it starts, and with the
+default off it never touches the database:
+
+| Tenant | Id | Rooms |
+|---|---|---|
+| Acme Corporation | `de000000-0000-0000-0000-0000000000a1` | 6, from a 2-person booth to a 40-person hall |
+| Globex Industries | `de000000-0000-0000-0000-0000000000a2` | 5 |
+
+Each one gets three bookings at 10:00 office time on the next working days. Running it again adds only what is
+missing: rooms are matched by name, so a room you edited or deactivated is left as you changed it, and a tenant that
+already has bookings gets no new ones. To sign in as someone from these tenants, put their id in the `tenant_id` claim
+(`dotnet user-jwts create --role Facilities --name fran --claim tenant_id=de000000-0000-0000-0000-0000000000a1`).
+
 ### Use an OpenID Connect provider (Supabase Auth)
 
 Instead of a signing key, the API can trust an OpenID Connect provider and fetch its public keys (JWKS). Set these

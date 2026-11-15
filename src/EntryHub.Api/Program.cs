@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using EntryHub.Api.Cors;
 using EntryHub.Api.Data;
+using EntryHub.Api.Demo;
 using EntryHub.Api.Documentation;
 using EntryHub.Api.Errors;
 using EntryHub.Api.Features;
@@ -31,6 +32,7 @@ builder.Services.AddExceptionHandler<DatabaseUnavailableHandler>();
 builder.Services.AddEntryHubCors();
 builder.Services.AddEntryHubSecurity();
 builder.Services.AddEntryHubRateLimiting();
+builder.Services.AddEntryHubDemo();
 builder.Services.AddEntryHubOpenApi();
 builder.Services.AddFeatureHandlers();
 builder.Services.AddV1Features(builder.Configuration);
