@@ -48,6 +48,9 @@ namespace EntryHub.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("ReminderSentAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("RescheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 

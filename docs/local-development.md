@@ -115,6 +115,8 @@ curl -H "$H_ANA"  $API/bookings/mine
 curl -H "$H_FRAN" "$API/bookings?roomId=$ROOM"            # every booking, Facilities only
 curl -H "$H_ANA"  "$API/rooms/$ROOM/schedule?from=2026-11-17T00:00:00Z&to=2026-11-18T00:00:00Z"
 curl -X PATCH $API/rooms/$ROOM -H "$H_FRAN" -H "Content-Type: application/json" -d '{"isActive":false}'
+curl -X POST $API/bookings/$BOOKING/reschedule -H "$H_ANA" -H "Content-Type: application/json" \
+  -d '{"startAt":"2026-11-18T09:00:00+01:00","endAt":"2026-11-18T10:00:00+01:00"}'   # same id, new time
 curl -X POST $API/bookings/$BOOKING/cancel -H "$H_ANA"
 ```
 

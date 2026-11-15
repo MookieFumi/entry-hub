@@ -66,6 +66,23 @@ public sealed class BookingPolicy
             ? new(BookingRuleCodes.TooLateToCancel, $"A booking can be cancelled until {rules.CancellationNotice.TotalMinutes:0} minutes before it starts.")
             : null;
 
+    /// <summary>
+    /// A booking can be moved while it is confirmed and has not ended, and an Employee until the same notice period
+    /// as for a cancellation before its current start (Facilities at any time).
+    /// </summary>
+    /// <returns>The reason the booking cannot be moved, or <see langword="null"/> when it can.</returns>
+    public RuleViolation? EvaluateReschedule(BookingRules rules, BookingStatus status, DateTimeOffset currentStart, DateTimeOffset currentEnd, DateTimeOffset now, bool isFacilities)
+    {
+        if (status != BookingStatus.Confirmed || currentEnd <= now)
+        {
+            return new(BookingRuleCodes.NotActive, "Only a confirmed booking that has not ended can be moved.");
+        }
+
+        return !isFacilities && currentStart - now < rules.CancellationNotice
+            ? new(BookingRuleCodes.TooLateToReschedule, $"A booking can be moved until {rules.CancellationNotice.TotalMinutes:0} minutes before it starts.")
+            : null;
+    }
+
     private static bool OnSlotBoundary(BookingRules rules, DateTimeOffset moment) => moment.UtcTicks % rules.Slot.Ticks == 0;
 
     private static bool WithinOpeningHours(SiteHours site, DateTimeOffset start, DateTimeOffset end)

@@ -81,6 +81,7 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 | `GET /api/v1/bookings` | `Bookings/ListBookings` | Facilities | everyone's bookings; filters `roomId`, `from`, `to`, `status`, paging |
 | `GET /api/v1/bookings/mine` | `Bookings/ListMyBookings` | any role | paged; `includeCancelled=true` to see cancelled ones |
 | `POST /api/v1/bookings/{id}/cancel` | `Bookings/CancelBooking` | owner or Facilities | 204; 422 inside the notice period for Employees |
+| `POST /api/v1/bookings/{id}/reschedule` | `Bookings/RescheduleBooking` | owner or Facilities | moves the booking to a new `startAt`/`endAt` and optionally another `roomId`, keeping its id; 200, 403, 404, 409 slot taken, 422 broken rule or too late |
 
 ### Tenant isolation
 
@@ -118,6 +119,16 @@ response has `features` (id, code, name, kind) and keeps `equipment` as the list
 the demo seeder starts with projector, screen, video conferencing, whiteboard, wheelchair access and induction loop;
 the migration turned the equipment text of existing rooms into entries (wheelchair access and induction loop became
 accessibility). An entry in use is never deleted, only deactivated: the rooms that have it keep it.
+
+### Moving a booking
+
+`POST /bookings/{id}/reschedule` takes the new `startAt` and `endAt` and, optionally, a new `roomId`. The booking keeps
+its id, title, organizer and attendees, and the response carries `rescheduledAt`. The new time passes exactly the
+rules of a new booking (duration, slot, the hours of the site of the room, lead time, capacity), except the limit of
+active bookings, because moving one does not add one. An Employee can move a booking until the cancellation notice
+before its current start; Facilities at any time. A cancelled or finished booking cannot be moved (`NotActive`). The
+database exclusion constraint decides overlaps, and it ignores the booking being moved, so shifting a booking by half an
+hour inside its own old time works. A booking moved to a later time is reminded again.
 
 ### Business rules
 

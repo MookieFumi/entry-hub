@@ -16,4 +16,6 @@ public static class BookingRuleCodes
     public const string RoomUnavailable = nameof(RoomUnavailable);
     public const string TooManyActiveBookings = nameof(TooManyActiveBookings);
     public const string TooLateToCancel = nameof(TooLateToCancel);
+    public const string TooLateToReschedule = nameof(TooLateToReschedule);
+    public const string NotActive = nameof(NotActive);
 }

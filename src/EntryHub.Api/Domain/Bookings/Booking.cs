@@ -11,7 +11,7 @@ public sealed class Booking : ITenantOwned
 
     public Guid TenantId { get; set; }
 
-    public Guid RoomId { get; init; }
+    public Guid RoomId { get; set; }
 
     /// <summary>
     /// The <c>sub</c> claim of the person who booked. There is no users table: identity comes from the token.
@@ -20,11 +20,16 @@ public sealed class Booking : ITenantOwned
 
     public required string Title { get; init; }
 
-    public DateTimeOffset StartAt { get; init; }
+    public DateTimeOffset StartAt { get; set; }
 
-    public DateTimeOffset EndAt { get; init; }
+    public DateTimeOffset EndAt { get; set; }
 
     public int Attendees { get; init; }
+
+    /// <summary>
+    /// When the booking was last moved to another time or room; <see langword="null"/> if it never was.
+    /// </summary>
+    public DateTimeOffset? RescheduledAt { get; set; }
 
     public BookingStatus Status { get; set; } = BookingStatus.Confirmed;
 
