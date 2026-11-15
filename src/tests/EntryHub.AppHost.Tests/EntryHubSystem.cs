@@ -85,8 +85,11 @@ public sealed class EntryHubSystem : IAsyncLifetime
     {
         if (_app is not null)
         {
-            // Stopping the containers can take a while but must not keep the run waiting forever.
-            await Task.WhenAny(_app.DisposeAsync().AsTask(), Task.Delay(DisposeTimeout));
+            // Stopping the containers can take a while but must not keep the run waiting forever. The timer is
+            // cancelled as soon as the system is down, so it does not keep running after the wait is over.
+            using var timer = new CancellationTokenSource();
+            await Task.WhenAny(_app.DisposeAsync().AsTask(), Task.Delay(DisposeTimeout, timer.Token));
+            await timer.CancelAsync();
         }
     }
 }
