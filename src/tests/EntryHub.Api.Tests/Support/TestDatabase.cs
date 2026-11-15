@@ -43,11 +43,23 @@ internal static class TestDatabase
     /// </summary>
     public static EntryHubDbContext CreateContext(string? connectionString = null, Guid? tenantId = null)
     {
+        if (connectionString is null)
+        {
+            // The first test to touch the database may be one that never started the API, so the schema and the shared
+            // tenants must exist before any context writes. The tests of one run share them.
+            Migrated.Value.GetAwaiter().GetResult();
+        }
+
+        return Create(connectionString ?? ConnectionString, tenantId ?? TestTenants.Default);
+    }
+
+    private static EntryHubDbContext Create(string connectionString, Guid tenantId)
+    {
         var options = new DbContextOptionsBuilder<EntryHubDbContext>()
-            .UseNpgsql(connectionString ?? ConnectionString)
+            .UseNpgsql(connectionString)
             .Options;
 
-        return new EntryHubDbContext(options, new FixedTenantContext(tenantId ?? TestTenants.Default));
+        return new EntryHubDbContext(options, new FixedTenantContext(tenantId));
     }
 
     private static string StartContainer()
@@ -65,7 +77,7 @@ internal static class TestDatabase
 
     private static async Task MigrateAsync()
     {
-        await using var db = CreateContext();
+        await using var db = Create(ConnectionString, TestTenants.Default);
         await db.Database.MigrateAsync();
 
         // Rooms and bookings need their tenant to exist. The tests share these two across the whole run.

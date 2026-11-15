@@ -13,6 +13,8 @@ using EntryHub.Api.Features.V1.Rules.GetRules;
 using EntryHub.Api.Security;
 using EntryHub.Api.Tests.Support;
 
+using Microsoft.EntityFrameworkCore;
+
 namespace EntryHub.Api.Tests.Features.V1;
 
 /// <summary>
@@ -32,6 +34,17 @@ public class FrontEndEndpointsTests
         var response = await facilities.PostAsJsonAsync("/api/v1/rooms", new CreateRoomRequest($"Room {Guid.NewGuid():N}", floor, capacity, null));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<RoomResponse>(TestJson.Options))!;
+    }
+
+    /// <summary>
+    /// The test database keeps what earlier runs left behind, so a floor picked at random may hold rooms already.
+    /// </summary>
+    private static async Task ClearFloorAsync(int floor)
+    {
+        await using var db = TestDatabase.CreateContext();
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""DELETE FROM bookings WHERE "RoomId" IN (SELECT "Id" FROM rooms WHERE "Floor" = {floor})""");
+        await db.Database.ExecuteSqlInterpolatedAsync($"""DELETE FROM rooms WHERE "Floor" = {floor}""");
     }
 
     private static async Task<BookingResponse> BookAsync(HttpClient client, Guid roomId, DateTimeOffset start, string title = "Planning")
@@ -153,6 +166,7 @@ public class FrontEndEndpointsTests
     {
         using var api = await TestApi.StartAsync();
         var floor = Random.Shared.Next(40, 90);
+        await ClearFloorAsync(floor);
         var free = await NewRoomAsync(api, capacity: 10, floor: floor);
         var booked = await NewRoomAsync(api, capacity: 10, floor: floor);
         var small = await NewRoomAsync(api, capacity: 2, floor: floor);

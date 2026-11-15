@@ -19,7 +19,17 @@ internal sealed class ApiFactory(string connectionString, IReadOnlyDictionary<st
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         builder.UseEnvironment("Testing")
-            .ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(authentication ?? TestTokens.Configuration))
+            .ConfigureAppConfiguration((_, configuration) =>
+            {
+                // Tests share one tenant and send far more requests than a person would, so the limit is out of the way
+                // unless a test sets its own: later sources win.
+                configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["RateLimiting:PermitLimit"] = "1000000",
+                    ["RateLimiting:AnonymousPermitLimit"] = "1000000",
+                });
+                configuration.AddInMemoryCollection(authentication ?? TestTokens.Configuration);
+            })
             .ConfigureTestServices(services =>
         {
             services.RemoveAll<TimeProvider>();

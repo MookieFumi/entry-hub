@@ -22,6 +22,7 @@ public static class V1Endpoints
     public static IEndpointRouteBuilder MapV1Endpoints(this IEndpointRouteBuilder app)
     {
         var v1 = app.MapGroup("/api/v1");
+        v1.ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         GetHealthEndpoint.Map(v1);
         v1.MapMeEndpoints();

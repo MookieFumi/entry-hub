@@ -2,10 +2,12 @@ using System.Text.Json.Serialization;
 
 using EntryHub.Api.Cors;
 using EntryHub.Api.Data;
+using EntryHub.Api.Demo;
 using EntryHub.Api.Documentation;
 using EntryHub.Api.Errors;
 using EntryHub.Api.Features;
 using EntryHub.Api.Features.V1;
+using EntryHub.Api.RateLimiting;
 using EntryHub.Api.Security;
 
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +31,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DatabaseUnavailableHandler>();
 builder.Services.AddEntryHubCors();
 builder.Services.AddEntryHubSecurity();
+builder.Services.AddEntryHubRateLimiting();
+builder.Services.AddEntryHubDemo();
 builder.Services.AddEntryHubOpenApi();
 builder.Services.AddFeatureHandlers();
 builder.Services.AddV1Features(builder.Configuration);
@@ -57,6 +61,11 @@ if (app.Environment.IsDevelopment() || args is ["migrate"])
 app.UseCors(CorsExtensions.PolicyName);
 
 app.UseAuthentication();
+
+// After authentication, so the limiter can count by the tenant in the token, and before authorization, so a flood of
+// requests that would get 403 is limited too.
+app.UseRateLimiter();
+
 app.UseAuthorization();
 
 app.MapDefaultEndpoints();

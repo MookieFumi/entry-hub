@@ -178,6 +178,47 @@ OPTIONS; allowed request headers are `Authorization` and `Content-Type`; `Retry-
 the browser. Credentials are not allowed: the API reads a Bearer header, never cookies. The CORS middleware runs
 before authentication, so preflights need no token and a 401 or 503 still reaches the page with its headers.
 
+### Deploying the demo
+
+Pushing a tag `v*` builds the API, applies the migrations, deploys it to Azure App Service and checks that it answers
+(`.github/workflows/deploy.yml`); a daily call keeps the free Supabase project awake (`keep-alive.yml`). What the
+repository needs, and how to set up the federated Azure login, is in [docs/deployment.md](docs/deployment.md).
+
+### Rate limiting
+
+Every request counts against a fixed window: per **tenant** for callers whose token has a tenant (all the users of a
+tenant share the limit, so one customer cannot use up the capacity of the others), per user when the token has no
+tenant, and per IP address when there is no token. Going over the limit returns `429` as `application/problem+json`
+with a `Retry-After` header (seconds), and the CORS headers are kept so the browser can read it. `/health` and `/alive`
+are never limited, so the platform can ask them at any rate. The defaults are small because the demo runs on App Service
+F1, which has little CPU.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `RateLimiting:Enabled` | `true` | `false` turns the limiter off |
+| `RateLimiting:PermitLimit` | `120` | Requests per window for each tenant (or user without tenant) |
+| `RateLimiting:AnonymousPermitLimit` | `30` | Requests per window for each IP address without a token |
+| `RateLimiting:WindowSeconds` | `60` | Length of the window |
+
+The limiter keeps its counters in the memory of each instance, so with several instances the real limit is the sum of
+their limits. Behind a proxy or load balancer, the IP address the API sees is the proxy's unless forwarded headers are
+configured, which makes all anonymous callers share one limit.
+
+### Demo data
+
+With `Demo__Seed=true` (the `Demo:Seed` setting) the API creates two demo customers when it starts, and with the
+default off it never touches the database:
+
+| Tenant | Id | Rooms |
+|---|---|---|
+| Acme Corporation | `de000000-0000-0000-0000-0000000000a1` | 6, from a 2-person booth to a 40-person hall |
+| Globex Industries | `de000000-0000-0000-0000-0000000000a2` | 5 |
+
+Each one gets three bookings at 10:00 office time on the next working days. Running it again adds only what is
+missing: rooms are matched by name, so a room you edited or deactivated is left as you changed it, and a tenant that
+already has bookings gets no new ones. To sign in as someone from these tenants, put their id in the `tenant_id` claim
+(`dotnet user-jwts create --role Facilities --name fran --claim tenant_id=de000000-0000-0000-0000-0000000000a1`).
+
 ### Use an OpenID Connect provider (Supabase Auth)
 
 Instead of a signing key, the API can trust an OpenID Connect provider and fetch its public keys (JWKS). Set these
