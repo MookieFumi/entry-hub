@@ -51,6 +51,8 @@ public sealed class UpdateRoomHandler(EntryHubDbContext db, FeatureResolver feat
 
         room.Floor = request.Floor ?? room.Floor;
         room.Capacity = request.Capacity ?? room.Capacity;
+        room.BufferBeforeMinutes = request.BufferBeforeMinutes ?? room.BufferBeforeMinutes;
+        room.BufferAfterMinutes = request.BufferAfterMinutes ?? room.BufferAfterMinutes;
         room.IsActive = request.IsActive ?? room.IsActive;
 
         var (resolved, unknownFeature) = await features.ResolveAsync(request.FeatureIds, request.Equipment, cancellationToken);

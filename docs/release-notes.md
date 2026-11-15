@@ -2,6 +2,10 @@
 
 ## v1.1.0 (in progress)
 
+- **Room buffers.** A room can keep minutes free before and after each booking (`bufferBeforeMinutes` and
+  `bufferAfterMinutes`, 0 to 240, set when the room is created or edited). A booking that would start or end inside the
+  buffer of a neighbour gets the same 409 as an overlap, and the availability search leaves such rooms out. Each booking
+  keeps the buffers the room had when it was made or moved, so editing a room does not change bookings that exist.
 - **Audit trail.** Every change made through the API to bookings (created, rescheduled, cancelled), rooms, sites, rules,
   the equipment catalog, holidays and blocks is recorded with who, when and which fields changed (never their values),
   in the same transaction as the change. Facilities read it with `GET /audit`, newest first, filtered by entity type,

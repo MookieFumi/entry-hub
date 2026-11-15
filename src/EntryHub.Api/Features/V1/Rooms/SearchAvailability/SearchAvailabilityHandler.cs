@@ -9,7 +9,7 @@ namespace EntryHub.Api.Features.V1.Rooms.SearchAvailability;
 public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
 {
     /// <summary>
-    /// Active rooms with no confirmed booking that overlaps the slot, in sites that are open that day. It does not check the other booking rules: a slot
+    /// Active rooms with no confirmed booking that overlaps the slot once the buffers of the room and of that booking are counted, in sites that are open that day. It does not check the other booking rules: a slot
     /// outside office hours simply fails when the booking is sent.
     /// </summary>
     public async Task<IReadOnlyList<RoomResponse>> HandleAsync(SearchAvailabilityQuery query, CancellationToken cancellationToken)
@@ -23,8 +23,8 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
             .Where(room => !db.Bookings.Any(booking =>
                 booking.RoomId == room.Id
                 && booking.Status == BookingStatus.Confirmed
-                && booking.StartAt < to
-                && booking.EndAt > from))
+                && booking.BlockedFrom < to.AddMinutes(room.BufferAfterMinutes)
+                && booking.BlockedUntil > from.AddMinutes(-room.BufferBeforeMinutes)))
             .Where(room => !db.RoomBlocks.Any(block => block.RoomId == room.Id && block.StartAt < to && block.EndAt > from));
 
         if (query.Floor is { } floor)

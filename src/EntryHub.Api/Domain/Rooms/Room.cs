@@ -28,6 +28,16 @@ public sealed class Room : ITenantOwned
     /// </summary>
     public List<Feature> Features { get; set; } = [];
 
+    /// <summary>
+    /// Minutes the room stays free before each booking, for setting up. Zero when it needs none.
+    /// </summary>
+    public int BufferBeforeMinutes { get; set; }
+
+    /// <summary>
+    /// Minutes the room stays free after each booking, for cleaning up. Zero when it needs none.
+    /// </summary>
+    public int BufferAfterMinutes { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; init; }

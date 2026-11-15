@@ -2550,6 +2550,30 @@
               "format": "uuid"
             },
             "description": "Ids of active entries of the catalog the room has, added to the ones named in Equipment."
+          },
+          "bufferBeforeMinutes": {
+            "maximum": 240,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes the room stays free before each booking; none when left out.",
+            "format": "int32",
+            "default": 0
+          },
+          "bufferAfterMinutes": {
+            "maximum": 240,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes the room stays free after each booking; none when left out.",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -3019,6 +3043,8 @@
           "capacity",
           "equipment",
           "features",
+          "bufferBeforeMinutes",
+          "bufferAfterMinutes",
           "isActive",
           "createdAt"
         ],
@@ -3069,6 +3095,24 @@
               "$ref": "#/components/schemas/FeatureResponse"
             },
             "description": "What the room has, from the catalog of the tenant."
+          },
+          "bufferBeforeMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes the room stays free before each booking.",
+            "format": "int32"
+          },
+          "bufferAfterMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes the room stays free after each booking.",
+            "format": "int32"
           },
           "isActive": {
             "type": "boolean",
@@ -3527,6 +3571,30 @@
               "format": "uuid"
             },
             "description": "Ids of active entries of the catalog the room has."
+          },
+          "bufferBeforeMinutes": {
+            "maximum": 240,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "New minutes the room stays free before each booking; applies to bookings made or moved from now on.",
+            "format": "int32"
+          },
+          "bufferAfterMinutes": {
+            "maximum": 240,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "New minutes the room stays free after each booking; applies to bookings made or moved from now on.",
+            "format": "int32"
           }
         },
         "description": "Fields left out are not changed. When Equipment or FeatureIds is sent, what the room has is replaced by both together."

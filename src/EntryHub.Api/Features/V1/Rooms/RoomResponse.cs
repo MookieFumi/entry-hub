@@ -10,6 +10,8 @@ namespace EntryHub.Api.Features.V1.Rooms;
 /// <param name="Capacity">People the room holds.</param>
 /// <param name="Equipment">Names of what the room has, the same as in <paramref name="Features"/>; kept for clients that only show text.</param>
 /// <param name="Features">What the room has, from the catalog of the tenant.</param>
+/// <param name="BufferBeforeMinutes">Minutes the room stays free before each booking.</param>
+/// <param name="BufferAfterMinutes">Minutes the room stays free after each booking.</param>
 /// <param name="IsActive">A deactivated room is not listed and cannot be booked.</param>
 /// <param name="CreatedAt">When the room was created.</param>
 public sealed record RoomResponse(
@@ -20,6 +22,8 @@ public sealed record RoomResponse(
     int Capacity,
     IReadOnlyList<string> Equipment,
     IReadOnlyList<FeatureResponse> Features,
+    int BufferBeforeMinutes,
+    int BufferAfterMinutes,
     bool IsActive,
     DateTimeOffset CreatedAt)
 {
@@ -35,6 +39,8 @@ public sealed record RoomResponse(
             room.Capacity,
             features.Select(feature => feature.Name).ToList(),
             features.Select(FeatureResponse.From).ToList(),
+            room.BufferBeforeMinutes,
+            room.BufferAfterMinutes,
             room.IsActive,
             room.CreatedAt);
     }

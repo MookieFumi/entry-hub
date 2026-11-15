@@ -55,7 +55,7 @@ public class MigrationDataTests
             {
                 var site = await afterSites.Sites.SingleAsync();
                 Assert.Equal(("Main office", "Europe/Madrid"), (site.Name, site.TimeZoneId));
-                Assert.All(await afterSites.Rooms.IgnoreAutoIncludes().ToListAsync(), room => Assert.Equal(site.Id, room.SiteId));
+                Assert.All(await afterSites.Rooms.IgnoreAutoIncludes().Select(room => room.SiteId).ToListAsync(), siteId => Assert.Equal(site.Id, siteId));
             }
 
             await migrator.MigrateAsync();
