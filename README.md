@@ -190,6 +190,8 @@ probes under the `Probes` tag. Do not route `/health` or `/alive` through an ing
 
 ### Get a token
 
+New to the API? Start with [docs/getting-started.md](docs/getting-started.md); what changed is in [docs/release-notes.md](docs/release-notes.md).
+
 A longer walkthrough (starting the API alone, Supabase Auth tokens, a second tenant, and a curl call for every endpoint)
 is in [docs/local-development.md](docs/local-development.md).
 
