@@ -2,6 +2,9 @@
 
 ## v1.1.0 (in progress)
 
+- **Holidays per site.** Facilities close a site on a date with `POST /sites/{id}/holidays` (also `GET` and
+  `DELETE`). Bookings and reschedules on that day get a 422 with the code `SiteClosed`, and the availability search
+  skips the rooms of a closed site. Existing bookings are not touched.
 - `POST /bookings` accepts an optional `Idempotency-Key` header. Retrying with the same key and body returns the original
   booking (with `Idempotent-Replayed: true`); the same key with a different body returns 422. Keys are private to each
   user and are remembered for 24 hours.

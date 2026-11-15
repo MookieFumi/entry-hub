@@ -24,6 +24,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
 
     public DbSet<Site> Sites => Set<Site>();
 
+    public DbSet<SiteHoliday> SiteHolidays => Set<SiteHoliday>();
+
     public DbSet<TenantRules> TenantRules => Set<TenantRules>();
 
     public DbSet<Feature> Features => Set<Feature>();
@@ -47,6 +49,7 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
         // The tenant filter lives here, once, and not in each query. Reading TenantId inside the lambda makes
         // EF Core evaluate it per context instance, not once per model.
         modelBuilder.Entity<Site>().HasQueryFilter(site => site.TenantId == TenantId);
+        modelBuilder.Entity<SiteHoliday>().HasQueryFilter(holiday => holiday.TenantId == TenantId);
         modelBuilder.Entity<TenantRules>().HasQueryFilter(rules => rules.TenantId == TenantId);
         modelBuilder.Entity<Feature>().HasQueryFilter(feature => feature.TenantId == TenantId);
         modelBuilder.Entity<RoomFeature>().HasQueryFilter(link => link.TenantId == TenantId);

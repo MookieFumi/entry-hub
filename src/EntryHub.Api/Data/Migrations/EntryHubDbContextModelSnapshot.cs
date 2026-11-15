@@ -295,6 +295,34 @@ namespace EntryHub.Api.Data.Migrations
                     b.ToTable("sites", (string)null);
                 });
 
+            modelBuilder.Entity("EntryHub.Api.Domain.Sites.SiteHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("SiteId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("site_holidays", (string)null);
+                });
+
             modelBuilder.Entity("EntryHub.Api.Domain.Tenants.Tenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -398,6 +426,21 @@ namespace EntryHub.Api.Data.Migrations
 
             modelBuilder.Entity("EntryHub.Api.Domain.Sites.Site", b =>
                 {
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Sites.SiteHoliday", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Sites.Site", null)
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
                         .WithMany()
                         .HasForeignKey("TenantId")

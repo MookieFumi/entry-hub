@@ -1,4 +1,5 @@
 using EntryHub.Api.Features.V1.Sites.CreateSite;
+using EntryHub.Api.Features.V1.Sites.Holidays;
 using EntryHub.Api.Features.V1.Sites.ListSites;
 using EntryHub.Api.Features.V1.Sites.UpdateSite;
 using EntryHub.Api.Security;
@@ -14,5 +15,6 @@ public static class SitesEndpoints
         ListSitesEndpoint.Map(sites);
         CreateSiteEndpoint.Map(sites);
         UpdateSiteEndpoint.Map(sites);
+        HolidaysEndpoints.Map(sites);
     }
 }
