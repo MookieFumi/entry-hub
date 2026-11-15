@@ -12,4 +12,6 @@ public static class BookingOperations
     public static readonly OperationAuthorizationRequirement Cancel = new() { Name = nameof(Cancel) };
 
     public static readonly OperationAuthorizationRequirement Reschedule = new() { Name = nameof(Reschedule) };
+
+    public static readonly OperationAuthorizationRequirement CheckIn = new() { Name = nameof(CheckIn) };
 }
