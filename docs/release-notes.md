@@ -2,6 +2,10 @@
 
 ## v1.1.0 (in progress)
 
+- **Audit trail.** Every change made through the API to bookings (created, rescheduled, cancelled), rooms, sites, rules,
+  the equipment catalog, holidays and blocks is recorded with who, when and which fields changed (never their values),
+  in the same transaction as the change. Facilities read it with `GET /audit`, newest first, filtered by entity type,
+  entity, person or dates. Changes made outside a request, such as the demo seeder, are not recorded.
 - **Book on behalf of someone else.** Facilities can pass `onBehalfOf` (the user's id) in `POST /bookings`; anyone else
   gets 403. The booking belongs to that user (it shows in their bookings and they can cancel or move it) and the new
   `createdBy` field of the booking says who made it. The active-bookings limit does not apply, as for any Facilities booking.

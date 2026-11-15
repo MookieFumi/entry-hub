@@ -46,6 +46,113 @@
         }
       }
     },
+    "/api/v1/audit": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Lists the changes made to bookings, rooms, sites, rules, the catalog, holidays and blocks, newest first, with paging. Facilities only.",
+        "operationId": "ListAudit",
+        "parameters": [
+          {
+            "name": "EntityType",
+            "in": "query",
+            "description": "Only changes to this type of thing.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EntityId",
+            "in": "query",
+            "description": "Only changes to this thing.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ActorId",
+            "in": "query",
+            "description": "Only changes made by this person.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "From",
+            "in": "query",
+            "description": "Only changes at or after this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "description": "Only changes before this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "One-based page number; defaults to 1.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Items per page; defaults to 20 and is capped at 100.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseOfAuditResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "tags": [
@@ -2130,6 +2237,55 @@
   },
   "components": {
     "schemas": {
+      "AuditResponse": {
+        "required": [
+          "id",
+          "at",
+          "actorId",
+          "action",
+          "entityType",
+          "entityId",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the entry.",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "description": "When the change was saved.",
+            "format": "date-time"
+          },
+          "actorId": {
+            "type": "string",
+            "description": "Who made it (the `sub` of the token)."
+          },
+          "action": {
+            "type": "string",
+            "description": "`Created`, `Updated`, `Deleted`, `Cancelled` or `Rescheduled`."
+          },
+          "entityType": {
+            "type": "string",
+            "description": "`Booking`, `Room`, `Site`, `Rules`, `Feature`, `SiteHoliday` or `RoomBlock`."
+          },
+          "entityId": {
+            "type": "string",
+            "description": "The thing that changed.",
+            "format": "uuid"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of what was created, or the fields that changed (never their values)."
+          }
+        },
+        "description": "One change made through the API."
+      },
       "BookingResponse": {
         "required": [
           "id",
@@ -2583,6 +2739,47 @@
           "tenantName": {
             "type": "string",
             "description": "The display name of that customer."
+          }
+        }
+      },
+      "PagedResponseOfAuditResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditResponse"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -3502,6 +3699,9 @@
   "tags": [
     {
       "name": "Health"
+    },
+    {
+      "name": "Audit"
     },
     {
       "name": "Me"
