@@ -21,4 +21,7 @@ public static class BookingRuleCodes
     public const string NotActive = nameof(NotActive);
     public const string SiteClosed = nameof(SiteClosed);
     public const string RoomBlocked = nameof(RoomBlocked);
+    public const string RoomAlreadyBooked = nameof(RoomAlreadyBooked);
+    public const string InvalidRecurrence = nameof(InvalidRecurrence);
+    public const string NonexistentLocalTime = nameof(NonexistentLocalTime);
 }

@@ -18,7 +18,10 @@ public sealed record BookingResponse(
     DateTimeOffset? CheckedInAt = null,
     string? DecidedBy = null,
     DateTimeOffset? DecidedAt = null,
-    string? DecisionReason = null)
+    string? DecisionReason = null,
+    Guid? SeriesId = null,
+    int? SeriesPosition = null,
+    SeriesOutcome? Series = null)
 {
     public static BookingResponse From(Booking booking) =>
         new(
@@ -37,5 +40,28 @@ public sealed record BookingResponse(
             booking.CheckedInAt,
             booking.DecidedBy,
             booking.DecidedAt,
-            booking.DecisionReason);
+            booking.DecisionReason,
+            booking.SeriesId,
+            booking.SeriesPosition);
 }
+
+/// <summary>
+/// What a recurring request produced: one entry for each occurrence it asked for. Only the response that creates the
+/// series has it.
+/// </summary>
+/// <param name="Id">Identifier of the series, also in <c>seriesId</c> of each created booking.</param>
+/// <param name="Requested">How many occurrences the recurrence asked for.</param>
+/// <param name="Created">How many of them were booked.</param>
+/// <param name="Occurrences">Every requested occurrence, booked or skipped.</param>
+public sealed record SeriesOutcome(Guid Id, int Requested, int Created, IReadOnlyList<SeriesOccurrence> Occurrences);
+
+/// <summary>
+/// One occurrence of a series: booked when <paramref name="BookingId"/> is set, otherwise skipped for the rules in
+/// <paramref name="Violations"/>.
+/// </summary>
+public sealed record SeriesOccurrence(
+    int Position,
+    DateTimeOffset StartAt,
+    DateTimeOffset EndAt,
+    Guid? BookingId,
+    IReadOnlyList<RuleViolation> Violations);

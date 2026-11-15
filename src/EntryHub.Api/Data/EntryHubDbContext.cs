@@ -43,6 +43,8 @@ public sealed class EntryHubDbContext(
 
     public DbSet<Booking> Bookings => Set<Booking>();
 
+    public DbSet<BookingSeries> BookingSeries => Set<BookingSeries>();
+
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
@@ -66,6 +68,7 @@ public sealed class EntryHubDbContext(
         modelBuilder.Entity<RoomBlock>().HasQueryFilter(block => block.TenantId == TenantId);
         modelBuilder.Entity<AuditEntry>().HasQueryFilter(entry => entry.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
+        modelBuilder.Entity<BookingSeries>().HasQueryFilter(series => series.TenantId == TenantId);
         modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }
 

@@ -2,6 +2,14 @@
 
 ## v1.1.0 (in progress)
 
+- **Recurring bookings.** `POST /bookings` accepts an optional `recurrence` (`frequency` Daily or Weekly, `interval`, and
+  either `count` or `until`, at most 52 occurrences). The days are counted in the time zone of the site and the time of
+  day is kept, so a 10:00 booking is still at 10:00 after the clocks change. Each occurrence goes through the same
+  rules, holidays, blocks and overlap check as a single booking, and the ones that fail are skipped: the series is
+  created when at least one fits (422 when none does). The 201 response is the first booking, with `seriesId`,
+  `seriesPosition` and `series`, which lists every requested occurrence with its `bookingId` or the `violations` that
+  skipped it. Repeating the request with the same `Idempotency-Key` returns the series that was created (a replay lists
+  only the occurrences that were booked). Every occurrence counts toward the active-bookings limit of the organizer.
 - **Release of bookings nobody checks in to.** A tenant can set `autoReleaseMinutes` in its rules (`PUT /rules`, 0 to
   240, off by default). The reminders service then cancels a confirmed booking that nobody checked in to within that
   many minutes after its start (while it has not ended), so the room is free again. The cancellation is audited with

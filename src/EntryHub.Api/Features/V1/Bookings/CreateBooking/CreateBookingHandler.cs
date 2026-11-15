@@ -3,6 +3,7 @@ using System.Text;
 
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
+using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Features.V1.Common;
 using EntryHub.Api.Features.V1.Rooms.Blocks;
 using EntryHub.Api.Features.V1.Rules;
@@ -63,56 +64,98 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
 
         var now = clock.GetUtcNow();
         var rules = await rulesReader.GetAsync(cancellationToken);
-        var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, request.StartAt, request.EndAt, request.Attendees, room.Capacity, now).ToList();
 
-        if (await SiteClosures.CheckAsync(db, room.SiteId, room.Site.Hours, request.StartAt, cancellationToken) is { } closed)
-        {
-            violations.Add(closed);
-        }
-
-        if (await RoomBlocks.CheckAsync(db, room.Id, request.StartAt, request.EndAt, cancellationToken) is { } blocked)
-        {
-            violations.Add(blocked);
-        }
-
-        if (!caller.IsFacilities)
-        {
-            var active = await db.Bookings.CountAsync(
+        var active = caller.IsFacilities
+            ? 0
+            : await db.Bookings.CountAsync(
                 booking => booking.OrganizerId == caller.Id
                     && booking.Status != BookingStatus.Cancelled
                     && booking.EndAt > now,
                 cancellationToken);
 
-            if (active >= rules.MaxActiveBookingsPerEmployee)
+        var series = request.Recurrence is { } recurrence ? BookingSeriesOccurrences.Plan(recurrence, request.StartAt, request.EndAt, room.Site!.Hours) : null;
+
+        if (series is { Violation: { } invalid })
+        {
+            return new CreateBookingResult.RulesBroken([invalid]);
+        }
+
+        var plan = series?.Occurrences ?? [new PlannedOccurrence(1, request.StartAt, request.EndAt, null)];
+        var bookings = new List<Booking>();
+        var skipped = new List<SeriesOccurrence>();
+        var occurrences = new List<SeriesOccurrence>();
+        var seriesId = series is null ? (Guid?)null : Guid.CreateVersion7();
+
+        foreach (var occurrence in plan)
+        {
+            var violations = occurrence.Violation is { } nonexistent ? [nonexistent] : new List<RuleViolation>();
+
+            if (violations.Count == 0)
             {
-                violations.Add(new(
-                    BookingRuleCodes.TooManyActiveBookings,
-                    $"You already have {active} active bookings; the limit is {rules.MaxActiveBookingsPerEmployee}."));
+                violations = await EvaluateAsync(caller, request, room, rules, occurrence, now, active + bookings.Count, cancellationToken);
             }
+
+            if (violations.Count == 0 && series is not null && await IsTakenAsync(room, occurrence, cancellationToken))
+            {
+                violations.Add(new(BookingRuleCodes.RoomAlreadyBooked, "Another booking of this room overlaps this occurrence."));
+            }
+
+            if (series is null && violations.Count > 0)
+            {
+                return new CreateBookingResult.RulesBroken(violations);
+            }
+
+            if (violations.Count > 0)
+            {
+                occurrences.Add(new(occurrence.Position, occurrence.StartAt, occurrence.EndAt, null, violations));
+                skipped.Add(occurrences[^1]);
+                continue;
+            }
+
+            var booking = new Booking
+            {
+                Id = Guid.CreateVersion7(),
+                RoomId = room.Id,
+                OrganizerId = organizer,
+                CreatedBy = organizer == caller.Id ? null : caller.Id,
+                Title = request.Title.Trim(),
+                StartAt = occurrence.StartAt.ToUniversalTime(),
+                EndAt = occurrence.EndAt.ToUniversalTime(),
+                Attendees = request.Attendees,
+                Status = room.RequiresApproval && !caller.IsFacilities ? BookingStatus.Pending : BookingStatus.Confirmed,
+                BufferBeforeMinutes = room.BufferBeforeMinutes,
+                BufferAfterMinutes = room.BufferAfterMinutes,
+                CreatedAt = now,
+                SeriesId = seriesId,
+                SeriesPosition = series is null ? null : occurrence.Position,
+            };
+
+            bookings.Add(booking);
+            occurrences.Add(new(occurrence.Position, occurrence.StartAt, occurrence.EndAt, booking.Id, []));
         }
 
-        if (violations.Count > 0)
+        if (bookings.Count == 0)
         {
-            return new CreateBookingResult.RulesBroken(violations);
+            return new CreateBookingResult.RulesBroken([.. skipped.SelectMany(occurrence => occurrence.Violations).DistinctBy(violation => (violation.Code, violation.Message))]);
         }
 
-        var booking = new Booking
+        if (series is not null)
         {
-            Id = Guid.CreateVersion7(),
-            RoomId = room.Id,
-            OrganizerId = organizer,
-            CreatedBy = organizer == caller.Id ? null : caller.Id,
-            Title = request.Title.Trim(),
-            StartAt = request.StartAt.ToUniversalTime(),
-            EndAt = request.EndAt.ToUniversalTime(),
-            Attendees = request.Attendees,
-            Status = room.RequiresApproval && !caller.IsFacilities ? BookingStatus.Pending : BookingStatus.Confirmed,
-            BufferBeforeMinutes = room.BufferBeforeMinutes,
-            BufferAfterMinutes = room.BufferAfterMinutes,
-            CreatedAt = now,
-        };
+            db.BookingSeries.Add(new BookingSeries
+            {
+                Id = seriesId!.Value,
+                RoomId = room.Id,
+                OrganizerId = organizer,
+                Frequency = request.Recurrence!.Frequency,
+                Interval = request.Recurrence.Interval,
+                Count = request.Recurrence.Count,
+                Until = request.Recurrence.Until,
+                CreatedAt = now,
+            });
+        }
 
-        db.Bookings.Add(booking);
+        db.Bookings.AddRange(bookings);
+        var booking0 = bookings[0];
 
         if (idempotencyKey is not null)
         {
@@ -122,7 +165,7 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
                 UserId = caller.Id,
                 Key = idempotencyKey,
                 RequestHash = requestHash!,
-                BookingId = booking.Id,
+                BookingId = booking0.Id,
                 CreatedAt = now,
             });
         }
@@ -150,12 +193,64 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         }
         catch (Exception exception) when (LostToAnotherBooking(exception))
         {
-            // No overlap check in C#: the exclusion constraint of the database is the only judge, so two
-            // simultaneous requests cannot both win.
+            // The exclusion constraint of the database is the only judge, so two simultaneous requests cannot both
+            // win. A series is saved whole: if one occurrence loses the race, none of them is created.
             return new CreateBookingResult.Overlaps();
         }
 
-        return new CreateBookingResult.Created(BookingResponse.From(booking));
+        var response = BookingResponse.From(booking0);
+
+        return new CreateBookingResult.Created(series is null
+            ? response
+            : response with { Series = new SeriesOutcome(seriesId!.Value, plan.Count, bookings.Count, occurrences) });
+    }
+
+    private async Task<List<RuleViolation>> EvaluateAsync(
+        Caller caller,
+        CreateBookingRequest request,
+        Room room,
+        BookingRules rules,
+        PlannedOccurrence occurrence,
+        DateTimeOffset now,
+        int active,
+        CancellationToken cancellationToken)
+    {
+        var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, occurrence.StartAt, occurrence.EndAt, request.Attendees, room.Capacity, now).ToList();
+
+        if (await SiteClosures.CheckAsync(db, room.SiteId, room.Site.Hours, occurrence.StartAt, cancellationToken) is { } closed)
+        {
+            violations.Add(closed);
+        }
+
+        if (await RoomBlocks.CheckAsync(db, room.Id, occurrence.StartAt, occurrence.EndAt, cancellationToken) is { } blocked)
+        {
+            violations.Add(blocked);
+        }
+
+        if (!caller.IsFacilities && active >= rules.MaxActiveBookingsPerEmployee)
+        {
+            violations.Add(new(
+                BookingRuleCodes.TooManyActiveBookings,
+                $"You already have {active} active bookings; the limit is {rules.MaxActiveBookingsPerEmployee}."));
+        }
+
+        return violations;
+    }
+
+    /// <summary>
+    /// Only to tell a series which occurrences to skip: the exclusion constraint stays the judge of the ones it saves.
+    /// </summary>
+    private Task<bool> IsTakenAsync(Room room, PlannedOccurrence occurrence, CancellationToken cancellationToken)
+    {
+        var from = occurrence.StartAt.ToUniversalTime().AddMinutes(-room.BufferBeforeMinutes);
+        var until = occurrence.EndAt.ToUniversalTime().AddMinutes(room.BufferAfterMinutes);
+
+        return db.Bookings.AnyAsync(
+            booking => booking.RoomId == room.Id
+                && booking.Status != BookingStatus.Cancelled
+                && booking.BlockedFrom < until
+                && booking.BlockedUntil > from,
+            cancellationToken);
     }
 
     /// <summary>
@@ -184,7 +279,17 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         }
 
         var booking = await db.Bookings.AsNoTracking().SingleAsync(booking => booking.Id == record.BookingId, cancellationToken);
-        return new CreateBookingResult.Created(BookingResponse.From(booking), Replayed: true);
+        var response = BookingResponse.From(booking);
+
+        if (booking.SeriesId is { } seriesId)
+        {
+            // The skipped occurrences were not saved, so a replay lists only the ones that were created.
+            var created = await db.Bookings.AsNoTracking().Where(other => other.SeriesId == seriesId).OrderBy(other => other.SeriesPosition).ToListAsync(cancellationToken);
+            var occurrences = created.Select(other => new SeriesOccurrence(other.SeriesPosition ?? 1, other.StartAt, other.EndAt, other.Id, [])).ToList();
+            response = response with { Series = new SeriesOutcome(seriesId, occurrences.Count, occurrences.Count, occurrences) };
+        }
+
+        return new CreateBookingResult.Created(response, Replayed: true);
     }
 
     private static string HashOf(CreateBookingRequest request)
@@ -196,7 +301,8 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             request.StartAt.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             request.EndAt.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             request.Attendees,
-            request.OnBehalfOf?.Trim());
+            request.OnBehalfOf?.Trim(),
+            request.Recurrence is { } recurrence ? $"{recurrence.Frequency}/{recurrence.Interval}/{recurrence.Count}/{recurrence.Until:O}" : null);
 
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }

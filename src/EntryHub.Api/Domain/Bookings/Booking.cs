@@ -83,6 +83,16 @@ public sealed class Booking : ITenantOwned
     public string? DecisionReason { get; set; }
 
     /// <summary>
+    /// The series this booking is an occurrence of; <see langword="null"/> for a single booking.
+    /// </summary>
+    public Guid? SeriesId { get; set; }
+
+    /// <summary>
+    /// Place of the occurrence among the ones the series asked for, starting at 1. Skipped occurrences leave gaps.
+    /// </summary>
+    public int? SeriesPosition { get; set; }
+
+    /// <summary>
     /// When the reminders service told the organizer that the booking is about to start; it is set once.
     /// </summary>
     public DateTimeOffset? ReminderSentAt { get; set; }
