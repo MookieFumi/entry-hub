@@ -53,6 +53,24 @@ internal static class TestDatabase
         return Create(connectionString ?? ConnectionString, tenantId ?? TestTenants.Default);
     }
 
+    /// <summary>
+    /// A tenant of its own with one site, for tests that change or delete everything the tenant has and so cannot
+    /// share <see cref="TestTenants.Default"/> with the rest of the run.
+    /// </summary>
+    public static async Task<Guid> CreateTenantAsync(string name)
+    {
+        await EnsureMigratedAsync();
+        var id = Guid.NewGuid();
+        await using var db = Create(ConnectionString, id);
+        await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO tenants (\"Id\", \"Name\", \"CreatedAt\") VALUES ({id}, {name}, now())");
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO sites ("Id", "TenantId", "Name", "TimeZoneId", "Opens", "Closes", "OpenDays", "IsActive", "CreatedAt")
+            VALUES ({Guid.NewGuid()}, {id}, 'Main office', 'Europe/Madrid', '08:00', '20:00', ARRAY[1, 2, 3, 4, 5], true, '2000-01-01 00:00:00+00')
+            """);
+        return id;
+    }
+
     private static EntryHubDbContext Create(string connectionString, Guid tenantId)
     {
         var options = new DbContextOptionsBuilder<EntryHubDbContext>()

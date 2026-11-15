@@ -2218,6 +2218,72 @@
         ]
       }
     },
+    "/api/v1/tenant/data": {
+      "delete": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Permanently deletes everything the tenant has stored: bookings, rooms, sites, holidays, catalog, blocks, rules and the audit trail. It all happens in one transaction. The tenant itself and one audit entry about the deletion stay. Facilities only; the body must confirm with the name of the tenant. Export the data first.",
+        "operationId": "DeleteTenantData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTenantDataRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteTenantDataResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -2681,6 +2747,106 @@
           "Friday",
           "Saturday"
         ]
+      },
+      "DeleteTenantDataRequest": {
+        "required": [
+          "confirmation"
+        ],
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The text `DELETE`, a space and the exact name of the tenant, as `GET /tenant/export` shows it (for example `DELETE Acme`)."
+          }
+        },
+        "description": "Deleting everything cannot be undone, so the request must say so in words."
+      },
+      "DeleteTenantDataResponse": {
+        "required": [
+          "deletedAt",
+          "bookings",
+          "rooms",
+          "sites",
+          "features",
+          "blocks",
+          "holidays",
+          "auditEntries"
+        ],
+        "type": "object",
+        "properties": {
+          "deletedAt": {
+            "type": "string",
+            "description": "When the data was removed.",
+            "format": "date-time"
+          },
+          "bookings": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Bookings removed.",
+            "format": "int32"
+          },
+          "rooms": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Rooms removed.",
+            "format": "int32"
+          },
+          "sites": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Sites removed.",
+            "format": "int32"
+          },
+          "features": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Entries of the equipment catalog removed.",
+            "format": "int32"
+          },
+          "blocks": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Maintenance blocks removed.",
+            "format": "int32"
+          },
+          "holidays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Closed days removed.",
+            "format": "int32"
+          },
+          "auditEntries": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Entries of the audit trail removed.",
+            "format": "int32"
+          }
+        },
+        "description": "What was removed. The tenant itself and one audit entry about the deletion stay."
       },
       "FeatureKind": {
         "enum": [
