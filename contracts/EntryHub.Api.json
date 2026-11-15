@@ -1374,6 +1374,228 @@
         ]
       }
     },
+    "/api/v1/rooms/{roomId}/blocks": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Lists the time ranges in which a room cannot be booked, optionally within a window.",
+        "operationId": "ListRoomBlocks",
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "From",
+            "in": "query",
+            "description": "Only blocks that end after this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "To",
+            "in": "query",
+            "description": "Only blocks that start before this moment.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomBlockResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Blocks a room for a time range, such as cleaning or repairs. Facilities only. Refused with 409 while confirmed bookings are in the range; the response lists them in 'bookingIds'.",
+        "operationId": "CreateRoomBlock",
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBlockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/rooms/{roomId}/blocks/{blockId}": {
+      "delete": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Lifts a block. Facilities only.",
+        "operationId": "DeleteRoomBlock",
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "blockId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/bookings": {
       "post": {
         "tags": [
@@ -1979,6 +2201,35 @@
           "Cancelled"
         ]
       },
+      "CreateBlockRequest": {
+        "required": [
+          "startAt",
+          "endAt",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "description": "First moment of the block.",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "description": "The block ends here; must be after StartAt.",
+            "format": "date-time"
+          },
+          "reason": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional explanation."
+          }
+        }
+      },
       "CreateBookingRequest": {
         "required": [
           "roomId",
@@ -2465,6 +2716,52 @@
           }
         },
         "description": "Moves a booking to another time and, optionally, another room. The booking keeps its id, title, organizer and\nattendees. The new time must pass the same rules as a new booking."
+      },
+      "RoomBlockResponse": {
+        "required": [
+          "id",
+          "roomId",
+          "startAt",
+          "endAt",
+          "reason",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the block.",
+            "format": "uuid"
+          },
+          "roomId": {
+            "type": "string",
+            "description": "The blocked room.",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "description": "First moment of the block.",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "description": "The block ends here; this moment is free again.",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the room is blocked, such as \"Cleaning\"."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the block was created.",
+            "format": "date-time"
+          }
+        },
+        "description": "A time range in which a room cannot be booked."
       },
       "RoomOccupancy": {
         "required": [

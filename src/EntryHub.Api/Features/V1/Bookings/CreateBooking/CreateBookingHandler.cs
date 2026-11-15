@@ -4,6 +4,7 @@ using System.Text;
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
+using EntryHub.Api.Features.V1.Rooms.Blocks;
 using EntryHub.Api.Features.V1.Rules;
 using EntryHub.Api.Features.V1.Sites;
 
@@ -58,6 +59,11 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         if (await SiteClosures.CheckAsync(db, room.SiteId, room.Site.Hours, request.StartAt, cancellationToken) is { } closed)
         {
             violations.Add(closed);
+        }
+
+        if (await RoomBlocks.CheckAsync(db, room.Id, request.StartAt, request.EndAt, cancellationToken) is { } blocked)
+        {
+            violations.Add(blocked);
         }
 
         if (!caller.IsFacilities)
