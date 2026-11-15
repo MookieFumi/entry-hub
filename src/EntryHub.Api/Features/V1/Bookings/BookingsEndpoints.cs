@@ -2,6 +2,7 @@ using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Bookings.CancelBooking;
 using EntryHub.Api.Features.V1.Bookings.CheckInBooking;
 using EntryHub.Api.Features.V1.Bookings.CreateBooking;
+using EntryHub.Api.Features.V1.Bookings.DecideBooking;
 using EntryHub.Api.Features.V1.Bookings.GetBooking;
 using EntryHub.Api.Features.V1.Bookings.ListBookings;
 using EntryHub.Api.Features.V1.Bookings.ListMyBookings;
@@ -33,5 +34,6 @@ public static class BookingsEndpoints
         CancelBookingEndpoint.Map(bookings);
         RescheduleBookingEndpoint.Map(bookings);
         CheckInBookingEndpoint.Map(bookings);
+        DecideBookingEndpoints.Map(bookings);
     }
 }

@@ -17,6 +17,8 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(booking => booking.OrganizerId).HasMaxLength(200);
         builder.Property(booking => booking.CreatedBy).HasMaxLength(200);
         builder.Property(booking => booking.Title).HasMaxLength(120);
+        builder.Property(booking => booking.DecidedBy).HasMaxLength(200);
+        builder.Property(booking => booking.DecisionReason).HasMaxLength(500);
         builder.Property(booking => booking.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasOne<Room>().WithMany().HasForeignKey(booking => booking.RoomId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Tenant>().WithMany().HasForeignKey(booking => booking.TenantId).OnDelete(DeleteBehavior.Restrict);
