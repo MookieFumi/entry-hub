@@ -37,6 +37,10 @@ namespace EntryHub.Api.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateTimeOffset>("EndAt")
                         .HasColumnType("timestamp with time zone");
 

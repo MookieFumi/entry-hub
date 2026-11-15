@@ -1601,7 +1601,7 @@
         "tags": [
           "Bookings"
         ],
-        "summary": "Books a room, enforcing the booking rules.",
+        "summary": "Books a room, enforcing the booking rules. Facilities can book for another user with onBehalfOf.",
         "description": "Send an optional Idempotency-Key header to retry safely: the same key with the same body returns the original booking (header Idempotent-Replayed: true) instead of creating another; the same key with a different body returns 422. Keys are private to each user and are remembered for 24 hours.",
         "operationId": "CreateBooking",
         "parameters": [
@@ -1643,6 +1643,9 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Forbidden"
           },
           "400": {
             "description": "Bad Request",
@@ -2192,6 +2195,12 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "createdBy": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -2266,6 +2275,14 @@
               "string"
             ],
             "format": "int32"
+          },
+          "onBehalfOf": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "The shape of the body. Rules that need data or a clock are checked later, in the handler."

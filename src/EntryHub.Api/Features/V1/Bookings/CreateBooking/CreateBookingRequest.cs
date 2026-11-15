@@ -10,7 +10,8 @@ public sealed record CreateBookingRequest(
     [property: Required, StringLength(120)] string Title,
     DateTimeOffset StartAt,
     DateTimeOffset EndAt,
-    [property: Range(1, 500)] int Attendees) : IValidatableObject
+    [property: Range(1, 500)] int Attendees,
+    [property: StringLength(200)] string? OnBehalfOf = null) : IValidatableObject
 {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
