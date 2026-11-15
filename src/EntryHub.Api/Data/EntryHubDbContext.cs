@@ -32,6 +32,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
 
     public DbSet<Booking> Bookings => Set<Booking>();
 
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         // One shared instance, so EF Core keeps reusing the same internal service provider.
         optionsBuilder.AddInterceptors(TenantConnectionInterceptor.Instance);
@@ -50,6 +52,7 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
         modelBuilder.Entity<RoomFeature>().HasQueryFilter(link => link.TenantId == TenantId);
         modelBuilder.Entity<Room>().HasQueryFilter(room => room.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
+        modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

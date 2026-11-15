@@ -16,6 +16,18 @@ internal static class BookingProblems
             statusCode: StatusCodes.Status422UnprocessableEntity,
             extensions: new Dictionary<string, object?> { ["violations"] = violations });
 
+    public static ProblemHttpResult IdempotencyKeyReused() =>
+        TypedResults.Problem(
+            title: "Idempotency-Key already used",
+            detail: "This Idempotency-Key was used for a different request. Send a new key for a new booking.",
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+
+    public static ProblemHttpResult IdempotencyKeyInvalid() =>
+        TypedResults.Problem(
+            title: "Invalid Idempotency-Key",
+            detail: $"The Idempotency-Key header must have between 1 and {IdempotencyRecord.MaxKeyLength} characters.",
+            statusCode: StatusCodes.Status400BadRequest);
+
     public static ProblemHttpResult Overlaps() =>
         TypedResults.Problem(
             title: "Room already booked",
