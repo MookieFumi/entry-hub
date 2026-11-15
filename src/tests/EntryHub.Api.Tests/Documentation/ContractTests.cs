@@ -109,7 +109,39 @@ public class ContractTests
     {
         var content = contract["paths"]![path]![method]!["responses"]![status]!["content"]!;
         var schema = content[mediaType ?? "application/json"]!["schema"]!.DeepClone();
-        schema["$defs"] = contract["components"]!["schemas"]!.DeepClone();
+        var definitions = contract["components"]!["schemas"]!.DeepClone();
+        ExtensibleEnumsToStrings(definitions);
+        schema["$defs"] = definitions;
         return JsonSchema.FromText(schema.ToJsonString().Replace("#/components/schemas/", "#/$defs/", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// <c>x-extensible-enum</c> is not a JSON Schema keyword. It lists the values that exist today but allows others,
+    /// so what a response must satisfy is just a string.
+    /// </summary>
+    private static void ExtensibleEnumsToStrings(JsonNode? node)
+    {
+        switch (node)
+        {
+            case JsonObject obj:
+                if (obj.Remove("x-extensible-enum"))
+                {
+                    obj["type"] = "string";
+                }
+
+                foreach (var child in obj.Select(pair => pair.Value).ToList())
+                {
+                    ExtensibleEnumsToStrings(child);
+                }
+
+                break;
+            case JsonArray array:
+                foreach (var child in array)
+                {
+                    ExtensibleEnumsToStrings(child);
+                }
+
+                break;
+        }
     }
 }

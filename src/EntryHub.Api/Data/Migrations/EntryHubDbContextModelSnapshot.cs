@@ -304,6 +304,9 @@ namespace EntryHub.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("SiteId")
                         .HasColumnType("uuid");
 

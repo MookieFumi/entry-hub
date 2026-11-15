@@ -19,7 +19,7 @@ public sealed class ListMyBookingsHandler(EntryHubDbContext db)
 
         if (query.IncludeCancelled != true)
         {
-            bookings = bookings.Where(booking => booking.Status == BookingStatus.Confirmed);
+            bookings = bookings.Where(booking => booking.Status != BookingStatus.Cancelled);
         }
 
         var total = await bookings.CountAsync(cancellationToken);

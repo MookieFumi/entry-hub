@@ -1830,7 +1830,11 @@
             "in": "query",
             "description": "Only bookings in this status; every status when omitted.",
             "schema": {
-              "$ref": "#/components/schemas/BookingStatus"
+              "enum": [
+                "Confirmed",
+                "Cancelled",
+                "Pending"
+              ]
             }
           },
           {
@@ -2543,9 +2547,10 @@
         }
       },
       "BookingStatus": {
-        "enum": [
+        "x-extensible-enum": [
           "Confirmed",
-          "Cancelled"
+          "Cancelled",
+          "Pending"
         ]
       },
       "CreateBlockRequest": {
@@ -2756,6 +2761,11 @@
             "description": "Minutes the room stays free after each booking; none when left out.",
             "format": "int32",
             "default": 0
+          },
+          "requiresApproval": {
+            "type": "boolean",
+            "description": "Bookings by Employees wait for approval; false when left out.",
+            "default": false
           }
         }
       },
@@ -3327,6 +3337,7 @@
           "features",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",
+          "requiresApproval",
           "isActive",
           "createdAt"
         ],
@@ -3395,6 +3406,10 @@
             ],
             "description": "Minutes the room stays free after each booking.",
             "format": "int32"
+          },
+          "requiresApproval": {
+            "type": "boolean",
+            "description": "A booking of this room made by an Employee waits for approval by Facilities."
           },
           "isActive": {
             "type": "boolean",
@@ -4046,6 +4061,13 @@
             ],
             "description": "New minutes the room stays free after each booking; applies to bookings made or moved from now on.",
             "format": "int32"
+          },
+          "requiresApproval": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether bookings by Employees wait for approval; applies to bookings made from now on."
           }
         },
         "description": "Fields left out are not changed. When Equipment or FeatureIds is sent, what the room has is replaced by both together."

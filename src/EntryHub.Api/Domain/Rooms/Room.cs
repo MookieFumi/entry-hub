@@ -38,6 +38,11 @@ public sealed class Room : ITenantOwned
     /// </summary>
     public int BufferAfterMinutes { get; set; }
 
+    /// <summary>
+    /// When <see langword="true"/>, a booking made by an Employee waits as <c>Pending</c> until Facilities approves it.
+    /// </summary>
+    public bool RequiresApproval { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; init; }

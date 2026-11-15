@@ -36,7 +36,7 @@ public sealed class StreamRoomOccupancyHandler(
             var now = clock.GetUtcNow();
 
             var busy = await db.Bookings.AsNoTracking()
-                .Where(booking => booking.RoomId == roomId && booking.Status == BookingStatus.Confirmed && booking.EndAt > now)
+                .Where(booking => booking.RoomId == roomId && booking.Status != BookingStatus.Cancelled && booking.EndAt > now)
                 .Select(booking => new TimeRange(booking.StartAt, booking.EndAt))
                 .ToListAsync(cancellationToken);
 
