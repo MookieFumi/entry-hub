@@ -19,12 +19,12 @@ public sealed class AuditEntry : ITenantOwned
     public required string ActorId { get; init; }
 
     /// <summary>
-    /// <c>Created</c>, <c>Updated</c>, <c>Deleted</c>, <c>Cancelled</c> or <c>Rescheduled</c>.
+    /// <c>Created</c>, <c>Updated</c>, <c>Deleted</c>, <c>Cancelled</c>, <c>Rescheduled</c> or <c>Exported</c>.
     /// </summary>
     public required string Action { get; init; }
 
     /// <summary>
-    /// <c>Booking</c>, <c>Room</c>, <c>Site</c>, <c>Rules</c>, <c>Feature</c>, <c>SiteHoliday</c> or <c>RoomBlock</c>.
+    /// <c>Booking</c>, <c>Room</c>, <c>Site</c>, <c>Rules</c>, <c>Feature</c>, <c>SiteHoliday</c>, <c>RoomBlock</c> or <c>Tenant</c>.
     /// </summary>
     public required string EntityType { get; init; }
 

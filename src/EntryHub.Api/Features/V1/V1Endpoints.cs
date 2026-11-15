@@ -6,6 +6,7 @@ using EntryHub.Api.Features.V1.Health.GetHealth;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rules;
 using EntryHub.Api.Features.V1.Sites;
+using EntryHub.Api.Features.V1.Tenant;
 
 namespace EntryHub.Api.Features.V1;
 
@@ -35,6 +36,7 @@ public static class V1Endpoints
         v1.MapRoomsEndpoints();
         v1.MapBookingsEndpoints();
         v1.MapAuditEndpoints();
+        v1.MapTenantEndpoints();
 
         return app;
     }
