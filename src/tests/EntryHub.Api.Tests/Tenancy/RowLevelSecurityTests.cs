@@ -37,7 +37,7 @@ public class RowLevelSecurityTests
                 END IF;
             END $$;
             GRANT USAGE ON SCHEMA public TO {Role};
-            GRANT SELECT, INSERT, UPDATE, DELETE ON rooms, bookings, tenants, sites, tenant_rules TO {Role};
+            GRANT SELECT, INSERT, UPDATE, DELETE ON rooms, bookings, tenants, sites, tenant_rules, features, room_features TO {Role};
             """,
             admin))
         {
@@ -95,7 +95,7 @@ public class RowLevelSecurityTests
         var name = $"Room {Guid.NewGuid():N}";
 
         var exception = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync(
-            $"""INSERT INTO rooms ("Id", "TenantId", "Name", "Floor", "Capacity", "Equipment", "IsActive", "CreatedAt") VALUES ({id}, {other}, {name}, 1, 4, ARRAY[]::text[], true, now())"""));
+            $"""INSERT INTO rooms ("Id", "TenantId", "SiteId", "Name", "Floor", "Capacity", "IsActive", "CreatedAt") VALUES ({id}, {other}, {TestSites.Other}, {name}, 1, 4, true, now())"""));
 
         Assert.Equal(PostgresErrorCodes.InsufficientPrivilege, exception.SqlState);
     }

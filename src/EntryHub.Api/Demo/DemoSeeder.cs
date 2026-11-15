@@ -1,5 +1,6 @@
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
+using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Domain.Tenants;
@@ -73,6 +74,14 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        var catalog = await db.Features.ToListAsync(cancellationToken);
+        foreach (var (name, kind) in DefaultCatalog.Entries.Where(entry => !catalog.Exists(feature => feature.Name == entry.Name)))
+        {
+            var feature = new Feature { Id = Guid.CreateVersion7(), Code = Feature.CodeFor(name), Name = name, Kind = kind, CreatedAt = now };
+            db.Features.Add(feature);
+            catalog.Add(feature);
+        }
+
         var existingSites = await db.Sites.ToListAsync(cancellationToken);
         var existingNames = await db.Rooms.Select(room => room.Name).ToListAsync(cancellationToken);
 
@@ -104,7 +113,7 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
                     Name = room.Name,
                     Floor = room.Floor,
                     Capacity = room.Capacity,
-                    Equipment = [.. room.Equipment],
+                    Features = [.. room.Equipment.Select(name => catalog.Find(feature => feature.Name == name)!)],
                     CreatedAt = now,
                 });
             }

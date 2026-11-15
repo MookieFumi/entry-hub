@@ -1,5 +1,6 @@
 using EntryHub.Api.Features.V1.Bookings;
 using EntryHub.Api.Features.V1.CurrentUser;
+using EntryHub.Api.Features.V1.Features;
 using EntryHub.Api.Features.V1.Health.GetHealth;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rules;
@@ -29,6 +30,7 @@ public static class V1Endpoints
         v1.MapMeEndpoints();
         v1.MapRulesEndpoints();
         v1.MapSitesEndpoints();
+        v1.MapFeaturesEndpoints();
         v1.MapRoomsEndpoints();
         v1.MapBookingsEndpoints();
 

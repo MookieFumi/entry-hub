@@ -375,6 +375,206 @@
         ]
       }
     },
+    "/api/v1/features": {
+      "get": {
+        "tags": [
+          "Features"
+        ],
+        "summary": "Lists the equipment and accessibility catalog of the tenant.",
+        "operationId": "ListFeatures",
+        "parameters": [
+          {
+            "name": "IncludeInactive",
+            "in": "query",
+            "description": "Also return deactivated entries. Only Facilities get them; for anyone else it is ignored.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Features"
+        ],
+        "summary": "Adds an entry to the catalog. Facilities only.",
+        "operationId": "CreateFeature",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFeatureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/features/{id}": {
+      "patch": {
+        "tags": [
+          "Features"
+        ],
+        "summary": "Renames a catalog entry or deactivates it. Facilities only.",
+        "operationId": "UpdateFeature",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeatureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/rooms": {
       "post": {
         "tags": [
@@ -514,6 +714,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "Features",
+            "in": "query",
+            "description": "Codes from `GET /features` separated by commas; only rooms that have all of them.",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -753,6 +961,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "Features",
+            "in": "query",
+            "description": "Codes from `GET /features` separated by commas; only rooms that have all of them.",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1471,6 +1687,25 @@
         },
         "description": "The shape of the body. Rules that need data or a clock are checked later, in the handler."
       },
+      "CreateFeatureRequest": {
+        "required": [
+          "name",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Name to show; unique among the entries of the tenant, ignoring case."
+          },
+          "kind": {
+            "description": "Equipment or accessibility.",
+            "$ref": "#/components/schemas/FeatureKind"
+          }
+        }
+      },
       "CreateRoomRequest": {
         "required": [
           "name",
@@ -1516,7 +1751,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Free-text equipment list."
+            "description": "Names of what the room has. A name that matches an entry of the catalog (ignoring case) uses it; a new name adds an equipment entry to the catalog."
           },
           "siteId": {
             "type": [
@@ -1525,6 +1760,17 @@
             ],
             "description": "Site of the room; the oldest active site of the tenant when left out.",
             "format": "uuid"
+          },
+          "featureIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of active entries of the catalog the room has, added to the ones named in Equipment."
           }
         }
       },
@@ -1586,6 +1832,46 @@
           "Friday",
           "Saturday"
         ]
+      },
+      "FeatureKind": {
+        "enum": [
+          "Equipment",
+          "Accessibility"
+        ]
+      },
+      "FeatureResponse": {
+        "required": [
+          "id",
+          "code",
+          "name",
+          "kind",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier to give to a room.",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable lowercase identifier, such as `video-conferencing`; the `features` filter uses it."
+          },
+          "name": {
+            "type": "string",
+            "description": "Name to show."
+          },
+          "kind": {
+            "description": "Equipment or accessibility.",
+            "$ref": "#/components/schemas/FeatureKind"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "A deactivated entry cannot be given to a room; the rooms that have it keep it."
+          }
+        },
+        "description": "An entry of the catalog of the tenant."
       },
       "GetHealthResponse": {
         "required": [
@@ -1838,6 +2124,7 @@
           "floor",
           "capacity",
           "equipment",
+          "features",
           "isActive",
           "createdAt"
         ],
@@ -1845,14 +2132,17 @@
         "properties": {
           "id": {
             "type": "string",
+            "description": "Identifier of the room.",
             "format": "uuid"
           },
           "siteId": {
             "type": "string",
+            "description": "Site the room belongs to.",
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique among the rooms of the site."
           },
           "floor": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -1860,6 +2150,7 @@
               "integer",
               "string"
             ],
+            "description": "Floor of the room.",
             "format": "int32"
           },
           "capacity": {
@@ -1868,19 +2159,30 @@
               "integer",
               "string"
             ],
+            "description": "People the room holds.",
             "format": "int32"
           },
           "equipment": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Names of what the room has, the same as in Features; kept for clients that only show text."
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeatureResponse"
+            },
+            "description": "What the room has, from the catalog of the tenant."
           },
           "isActive": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "A deactivated room is not listed and cannot be booked."
           },
           "createdAt": {
             "type": "string",
+            "description": "When the room was created.",
             "format": "date-time"
           }
         }
@@ -2181,6 +2483,44 @@
           }
         }
       },
+      "UpdateFeatureRequest": {
+        "required": [
+          "name",
+          "kind",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New name; unique among the entries of the tenant, ignoring case."
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "New kind.",
+                "$ref": "#/components/schemas/FeatureKind"
+              }
+            ]
+          },
+          "isActive": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "`false` stops new rooms from getting it; the rooms that have it keep it."
+          }
+        },
+        "description": "Fields left out are not changed. The code never changes, and an entry is never deleted: a room may use it, so the\nonly way to retire it is IsActive = `false`."
+      },
       "UpdateRoomRequest": {
         "required": [
           "name",
@@ -2232,7 +2572,7 @@
             "items": {
               "type": "string"
             },
-            "description": "New equipment list."
+            "description": "Names of what the room has; a name that matches an entry of the catalog (ignoring case) uses it, a new name adds an equipment entry."
           },
           "isActive": {
             "type": [
@@ -2248,9 +2588,20 @@
             ],
             "description": "Move the room to another active site of the tenant.",
             "format": "uuid"
+          },
+          "featureIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of active entries of the catalog the room has."
           }
         },
-        "description": "Fields left out are not changed. Equipment replaces the whole list when it is sent."
+        "description": "Fields left out are not changed. When Equipment or FeatureIds is sent, what the room has is replaced by both together."
       },
       "UpdateRulesRequest": {
         "required": [
@@ -2429,6 +2780,9 @@
     },
     {
       "name": "Sites"
+    },
+    {
+      "name": "Features"
     },
     {
       "name": "Rooms"

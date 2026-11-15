@@ -38,6 +38,22 @@ public class DemoSeederTests
     }
 
     [Fact]
+    public async Task Both_demo_tenants_start_with_the_default_catalog_and_their_rooms_use_it()
+    {
+        await TestDatabase.EnsureMigratedAsync();
+        await Seeder().SeedAsync(CancellationToken.None);
+
+        await using var acme = TestDatabase.CreateContext(tenantId: DemoSeeder.AcmeId);
+        await using var globex = TestDatabase.CreateContext(tenantId: DemoSeeder.GlobexId);
+
+        Assert.Equal(6, await acme.Features.CountAsync());
+        Assert.Equal(6, await globex.Features.CountAsync());
+        var hall = await acme.Rooms.SingleAsync(room => room.Name == "Aula Magna");
+        Assert.Equal(["Projector", "Video conferencing", "Whiteboard"], hall.Features.Select(feature => feature.Name).Order());
+        Assert.Empty((await acme.Rooms.SingleAsync(room => room.Name == "Cabina 1")).Features);
+    }
+
+    [Fact]
     public async Task The_demo_tenants_differ_in_sites_and_in_rules()
     {
         await TestDatabase.EnsureMigratedAsync();

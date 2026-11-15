@@ -66,11 +66,14 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 | `GET /api/v1/sites` | `Sites/ListSites` | any role | the active sites of the tenant; Facilities can add `includeInactive=true` |
 | `POST /api/v1/sites` | `Sites/CreateSite` | Facilities | 201, 400 on a bad zone or hours, 409 when the name is taken |
 | `PATCH /api/v1/sites/{id}` | `Sites/UpdateSite` | Facilities | edit the zone, hours and days, or deactivate (`isActive=false`); 404, 409 |
+| `GET /api/v1/features` | `Features/ListFeatures` | any role | the equipment and accessibility catalog of the tenant; Facilities can add `includeInactive=true` |
+| `POST /api/v1/features` | `Features/CreateFeature` | Facilities | adds an entry (`name`, `kind`: `Equipment` or `Accessibility`); the code is derived from the name; 409 when the name is taken |
+| `PATCH /api/v1/features/{id}` | `Features/UpdateFeature` | Facilities | rename, change the kind, or deactivate; an entry is never deleted because rooms may use it; 404, 409 |
 | `POST /api/v1/rooms` | `Rooms/CreateRoom` | Facilities | 201, 400 on a bad body or an unknown site, 409 when the name is taken in the site; without `siteId` the room goes to the oldest active site |
 | `GET /api/v1/rooms/{id}` | `Rooms/GetRoom` | any role | 200 or 404 |
 | `PATCH /api/v1/rooms/{id}` | `Rooms/UpdateRoom` | Facilities | edit or deactivate (`isActive=false`); 404, 409 when the name is taken |
-| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor`, `minCapacity` and `siteId`, paging with `page` and `pageSize`; Facilities can add `includeInactive=true` |
-| `GET /api/v1/rooms/availability` | `Rooms/SearchAvailability` | any role | rooms free in `from`..`to` (max 31 days), filters `attendees`, `minCapacity`, `floor`, `siteId` |
+| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor`, `minCapacity`, `siteId` and `features` (catalog codes separated by commas, the room needs all of them), paging with `page` and `pageSize`; Facilities can add `includeInactive=true` |
+| `GET /api/v1/rooms/availability` | `Rooms/SearchAvailability` | any role | rooms free in `from`..`to` (max 31 days), filters `attendees`, `minCapacity`, `floor`, `siteId`, `features` |
 | `GET /api/v1/rooms/{id}/schedule` | `Rooms/GetRoomSchedule` | any role | busy ranges in `from`..`to`; title and organizer only for Facilities and the organizer |
 | `GET /api/v1/rooms/{id}/occupancy` | `Rooms/StreamRoomOccupancy` | any role | Server-Sent Events; free or occupied every 5 seconds |
 | `POST /api/v1/bookings` | `Bookings/CreateBooking` | any role | 201, 400 bad body, 422 broken rule, 409 slot taken |
@@ -105,6 +108,16 @@ reason, setting `app.tenant_id` inside a transaction.
   the logs.
 
 Every error body is `application/problem+json` (`AddProblemDetails()` plus `UseExceptionHandler()`).
+
+### Equipment and accessibility catalog
+
+What a room has is no longer free text: each tenant has a catalog (`GET /features`) of equipment and accessibility
+entries, and a room points at entries of it. `POST` and `PATCH` of a room take `featureIds`; the old `equipment` list of
+names still works: a name that matches an entry (ignoring case) uses it and a new name adds an equipment entry. The
+response has `features` (id, code, name, kind) and keeps `equipment` as the list of the same names. A tenant created by
+the demo seeder starts with projector, screen, video conferencing, whiteboard, wheelchair access and induction loop;
+the migration turned the equipment text of existing rooms into entries (wheelchair access and induction loop became
+accessibility). An entry in use is never deleted, only deactivated: the rooms that have it keep it.
 
 ### Business rules
 

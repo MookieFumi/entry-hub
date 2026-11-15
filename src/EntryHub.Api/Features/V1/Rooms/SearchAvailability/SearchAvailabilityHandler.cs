@@ -35,6 +35,8 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
             rooms = rooms.Where(room => room.SiteId == siteId);
         }
 
+        rooms = FeatureFilter.Apply(rooms, query.Features);
+
         var found = await rooms.OrderBy(room => room.Floor).ThenBy(room => room.Name).ToListAsync(cancellationToken);
 
         return found.Select(RoomResponse.From).ToList();

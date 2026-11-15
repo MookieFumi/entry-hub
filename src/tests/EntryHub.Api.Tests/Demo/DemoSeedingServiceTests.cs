@@ -23,8 +23,10 @@ public class DemoSeedingServiceTests
         await using var db = TestDatabase.CreateContext();
         await db.Database.ExecuteSqlRawAsync("""
             DELETE FROM bookings WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
+            DELETE FROM room_features WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             DELETE FROM rooms WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             DELETE FROM sites WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
+            DELETE FROM features WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             DELETE FROM tenant_rules WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             """);
     }

@@ -122,7 +122,7 @@ public class RoomsEndpointTests
         {
             // Bookings point at rooms, so the ones of this floor go first.
             await db.Bookings.Where(booking => db.Rooms.Any(room => room.Id == booking.RoomId && room.Floor == floor)).ExecuteDeleteAsync();
-            await db.Rooms.Where(room => room.Floor == floor).ExecuteDeleteAsync();
+            await db.Rooms.IgnoreAutoIncludes().Where(room => room.Floor == floor).ExecuteDeleteAsync();
         }
 
         foreach (var capacity in new[] { 4, 8 })

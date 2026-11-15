@@ -1,6 +1,7 @@
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Features.V1.Common;
+using EntryHub.Api.Features.V1.Features;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoom;
 using EntryHub.Api.Features.V1.Rooms.ListRooms;
@@ -30,7 +31,7 @@ public class RoomsHandlerTests
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
         var now = new DateTimeOffset(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
-        var handler = new CreateRoomHandler(db, new FixedClock(now));
+        var handler = new CreateRoomHandler(db, new FeatureResolver(db, new FixedClock(now)), new FixedClock(now));
         var name = UniqueName();
 
         var (_, created) = await handler.HandleAsync(
@@ -52,12 +53,12 @@ public class RoomsHandlerTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
-        var handler = new CreateRoomHandler(db, TimeProvider.System);
+        var handler = new CreateRoomHandler(db, new FeatureResolver(db, TimeProvider.System), TimeProvider.System);
         var request = new CreateRoomRequest(UniqueName(), 1, 4, null);
 
         Assert.Equal(CreateRoomOutcome.Created, (await handler.HandleAsync(request, CancellationToken.None)).Outcome);
         await using var second = TestDatabase.CreateContext();
-        var duplicate = await new CreateRoomHandler(second, TimeProvider.System).HandleAsync(request, CancellationToken.None);
+        var duplicate = await new CreateRoomHandler(second, new FeatureResolver(second, TimeProvider.System), TimeProvider.System).HandleAsync(request, CancellationToken.None);
 
         Assert.Equal(CreateRoomOutcome.NameInUse, duplicate.Outcome);
     }
@@ -71,7 +72,7 @@ public class RoomsHandlerTests
         var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(async _ =>
         {
             await using var db = TestDatabase.CreateContext();
-            return await new CreateRoomHandler(db, TimeProvider.System).HandleAsync(request, CancellationToken.None);
+            return await new CreateRoomHandler(db, new FeatureResolver(db, TimeProvider.System), TimeProvider.System).HandleAsync(request, CancellationToken.None);
         }));
 
         Assert.Equal(1, results.Count(result => result.Outcome == CreateRoomOutcome.Created));
@@ -93,8 +94,8 @@ public class RoomsHandlerTests
         await using var db = TestDatabase.CreateContext();
         const int floor = HandlerListFloor;
         await db.Bookings.Where(booking => db.Rooms.Any(room => room.Id == booking.RoomId && room.Floor == floor)).ExecuteDeleteAsync();
-        await db.Rooms.Where(room => room.Floor == floor).ExecuteDeleteAsync();
-        var create = new CreateRoomHandler(db, TimeProvider.System);
+        await db.Rooms.IgnoreAutoIncludes().Where(room => room.Floor == floor).ExecuteDeleteAsync();
+        var create = new CreateRoomHandler(db, new FeatureResolver(db, TimeProvider.System), TimeProvider.System);
         foreach (var capacity in new[] { 4, 6, 10, 12 })
         {
             await create.HandleAsync(new CreateRoomRequest(UniqueName(), floor, capacity, null), CancellationToken.None);
@@ -118,7 +119,7 @@ public class RoomsHandlerTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
-        var (_, room) = await new CreateRoomHandler(db, TimeProvider.System)
+        var (_, room) = await new CreateRoomHandler(db, new FeatureResolver(db, TimeProvider.System), TimeProvider.System)
             .HandleAsync(new CreateRoomRequest(UniqueName(), 1, 4, null), CancellationToken.None);
         var options = Options.Create(new StreamRoomOccupancyOptions { Interval = TimeSpan.FromMilliseconds(10) });
         var handler = new StreamRoomOccupancyHandler(db, TimeProvider.System, options);
@@ -146,7 +147,7 @@ public class RoomsHandlerTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
-        var (_, room) = await new CreateRoomHandler(db, TimeProvider.System)
+        var (_, room) = await new CreateRoomHandler(db, new FeatureResolver(db, TimeProvider.System), TimeProvider.System)
             .HandleAsync(new CreateRoomRequest(UniqueName(), 1, 4, null), CancellationToken.None);
         var start = TestClock.MondayMorning.AddMinutes(-30);
         var end = TestClock.MondayMorning.AddMinutes(30);

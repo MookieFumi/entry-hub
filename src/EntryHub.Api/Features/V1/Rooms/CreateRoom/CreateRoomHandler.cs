@@ -1,5 +1,6 @@
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Rooms;
+using EntryHub.Api.Features.V1.Features;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ public enum CreateRoomOutcome
     Created,
     NameInUse,
     SiteNotFound,
+    FeatureNotFound,
 }
 
-public sealed class CreateRoomHandler(EntryHubDbContext db, TimeProvider clock)
+public sealed class CreateRoomHandler(EntryHubDbContext db, FeatureResolver features, TimeProvider clock)
 {
     public async Task<(CreateRoomOutcome Outcome, RoomResponse? Room)> HandleAsync(CreateRoomRequest request, CancellationToken cancellationToken)
     {
@@ -35,6 +37,13 @@ public sealed class CreateRoomHandler(EntryHubDbContext db, TimeProvider clock)
             return (CreateRoomOutcome.NameInUse, null);
         }
 
+        var (resolved, unknownFeature) = await features.ResolveAsync(request.FeatureIds, request.Equipment ?? [], cancellationToken);
+
+        if (unknownFeature is not null)
+        {
+            return (CreateRoomOutcome.FeatureNotFound, null);
+        }
+
         var room = new Room
         {
             Id = Guid.CreateVersion7(),
@@ -42,7 +51,7 @@ public sealed class CreateRoomHandler(EntryHubDbContext db, TimeProvider clock)
             Name = name,
             Floor = request.Floor,
             Capacity = request.Capacity,
-            Equipment = request.Equipment?.Select(item => item.Trim()).Where(item => item.Length > 0).Distinct().ToList() ?? [],
+            Features = resolved ?? [],
             CreatedAt = clock.GetUtcNow(),
         };
 
