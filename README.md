@@ -178,6 +178,12 @@ OPTIONS; allowed request headers are `Authorization` and `Content-Type`; `Retry-
 the browser. Credentials are not allowed: the API reads a Bearer header, never cookies. The CORS middleware runs
 before authentication, so preflights need no token and a 401 or 503 still reaches the page with its headers.
 
+### Deploying the demo
+
+Pushing a tag `v*` builds the API, applies the migrations, deploys it to Azure App Service and checks that it answers
+(`.github/workflows/deploy.yml`); a daily call keeps the free Supabase project awake (`keep-alive.yml`). What the
+repository needs, and how to set up the federated Azure login, is in [docs/deployment.md](docs/deployment.md).
+
 ### Rate limiting
 
 Every request counts against a fixed window: per **tenant** for callers whose token has a tenant (all the users of a

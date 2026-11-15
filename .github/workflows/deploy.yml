@@ -1,0 +1,135 @@
+# .github/workflows/deploy.yml
+name: deploy
+
+# Push a tag such as v1.0.0 to build the API, apply the migrations and deploy it to the Azure App Service of the demo.
+# Run it by hand with a tag to deploy that tag again (this is also how a failed deployment is rolled back).
+#
+# Nothing happens until the repository has the variable AZURE_WEBAPP_NAME: tags pushed before the infrastructure
+# exists (see docs/deployment.md) finish with the deploy job skipped instead of failing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to deploy, for example v1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  # The tag to deploy: the one that triggered the run, or the one asked for by hand.
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: src/global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Test the API
+        # The API tests start their own PostgreSQL with Testcontainers, on the Docker of the runner.
+        run: dotnet test src/tests/EntryHub.Api.Tests
+
+      - name: Publish
+        run: dotnet publish src/EntryHub.Api -c Release -o publish --no-self-contained
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: api-${{ env.TAG }}
+          path: publish
+          if-no-files-found: error
+          retention-days: 30
+
+  deploy:
+    needs: build
+    # Without the web app name there is nothing to deploy to yet.
+    if: vars.AZURE_WEBAPP_NAME != ''
+    runs-on: ubuntu-latest
+    # The environment holds the protection rules (required reviewers) and the secrets of the deployment.
+    environment:
+      name: production
+      url: ${{ vars.API_URL }}
+    permissions:
+      contents: read
+      # Federated login: GitHub proves who the workflow is, so Azure needs no stored password.
+      id-token: write
+      # Lets the rollback step start this workflow again with the previous tag.
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: api-${{ env.TAG }}
+          path: publish
+
+      - name: Apply the migrations
+        # The API already has a `migrate` command (the init container of the chart uses it): it applies the migrations
+        # and exits. It runs here with the owner role of the database, so the API itself can connect with an ordinary
+        # role that has no right to change the schema and that Row-Level Security applies to.
+        env:
+          ConnectionStrings__EntryHub: ${{ secrets.MIGRATIONS_CONNECTION_STRING }}
+        run: dotnet publish/EntryHub.Api.dll migrate
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          package: publish
+
+      - name: Smoke test
+        id: smoke
+        run: |
+          # F1 has no Always On, so the first request after a deployment can take a while: try for about two minutes.
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error "$API_URL/health" >/dev/null \
+              && curl --fail --silent --show-error "$API_URL/api/v1/health" >/dev/null; then
+              echo "The API answers and reaches PostgreSQL."
+              exit 0
+            fi
+            echo "Attempt $attempt failed, trying again in 10 seconds."
+            sleep 10
+          done
+          echo "The API does not answer after the deployment."
+          exit 1
+        env:
+          API_URL: ${{ vars.API_URL }}
+
+      - name: Roll back to the previous tag
+        # Only after a failed smoke test. Migrations are not undone: they only add, so the previous version keeps working
+        # on the new schema (write migrations that way).
+        if: failure() && steps.smoke.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 --match "v*" "$TAG^" 2>/dev/null || true)
+          if [ -z "$previous" ]; then
+            echo "::error::There is no earlier tag to go back to. Fix the problem and push a new tag."
+            exit 1
+          fi
+          echo "Deploying $previous again."
+          gh workflow run deploy.yml --ref main -f tag="$previous"
