@@ -64,13 +64,33 @@ az role assignment create --assignee "$APP_ID" --role "Website Contributor" \
    (`AZURE_TENANT_ID`) from the *Overview*.
 2. In that app: *Certificates & secrets → Federated credentials → Add credential*. Scenario *GitHub Actions deploying
    Azure resources*, organization `mookie-studio`, repository `entry-hub`, entity type *Environment*, environment name
-   `production`, name `github-production`, *Add*.
+   `production`, name `github-production`, *Add*. If the form asks for numeric ids instead, see the next section.
 3. Open the App Service: *Access control (IAM) → Add → Add role assignment*. Role *Website Contributor* (under *Job
    function roles*), members: *User, group, or service principal → Select members → `entryhub-github`*, then *Review +
    assign*.
 4. *Subscriptions →* your subscription: copy the **Subscription ID** (`AZURE_SUBSCRIPTION_ID`).
 
 The `subject` must match the repository owner and name exactly; if the repository moves, create the credential again.
+
+### When the credential form asks for GitHub numeric ids
+
+Some versions of the form ask for the **organization id** and the **repository id** of GitHub. You can read them in the
+browser, with no sign-in, because the repositories are public:
+
+| What | Where | Value today |
+|---|---|---|
+| Organization id (`mookie-studio`) | https://api.github.com/repos/mookie-studio/entry-hub, the `id` inside `owner` | `356768393` |
+| Repository id of `entry-hub` | the same page, the first `id` | `1423551095` |
+| Repository id of `entry-hub-frontend` | https://api.github.com/repos/mookie-studio/entry-hub-frontend, the first `id` | `1458145927` |
+
+A credential built from numeric ids can use a different subject format from the name-based one above. What matters is
+that the subject **equals the `sub` claim of the token that `azure/login` sends**, and by default GitHub issues the
+name-based `repo:mookie-studio/entry-hub:environment:production`. If the form insists on ids and you have not
+customised the subject claim in GitHub, create the credential with the scenario *Other issuer* instead: issuer
+`https://token.actions.githubusercontent.com`, subject `repo:mookie-studio/entry-hub:environment:production`,
+audience `api://AzureADTokenExchange`. If `azure/login` still fails with `AADSTS700213` ("No matching federated
+identity record found for presented assertion subject"), the error prints the exact subject GitHub sent: create the
+credential with that text.
 
 ## GitHub: variables, secrets and environment
 
