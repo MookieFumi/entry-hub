@@ -33,7 +33,7 @@ public class RoomsHandlerTests
         var handler = new CreateRoomHandler(db, new FixedClock(now));
         var name = UniqueName();
 
-        var created = await handler.HandleAsync(
+        var (_, created) = await handler.HandleAsync(
             new CreateRoomRequest($"  {name}  ", 3, 8, [" Projector ", "", "Projector", "Whiteboard"]),
             CancellationToken.None);
 
@@ -48,22 +48,22 @@ public class RoomsHandlerTests
     }
 
     [Fact]
-    public async Task Create_returns_null_when_the_name_is_taken()
+    public async Task Create_reports_a_name_in_use_when_the_name_is_taken()
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
         var handler = new CreateRoomHandler(db, TimeProvider.System);
         var request = new CreateRoomRequest(UniqueName(), 1, 4, null);
 
-        Assert.NotNull(await handler.HandleAsync(request, CancellationToken.None));
+        Assert.Equal(CreateRoomOutcome.Created, (await handler.HandleAsync(request, CancellationToken.None)).Outcome);
         await using var second = TestDatabase.CreateContext();
         var duplicate = await new CreateRoomHandler(second, TimeProvider.System).HandleAsync(request, CancellationToken.None);
 
-        Assert.Null(duplicate);
+        Assert.Equal(CreateRoomOutcome.NameInUse, duplicate.Outcome);
     }
 
     [Fact]
-    public async Task Create_returns_null_when_the_unique_index_wins_a_race()
+    public async Task Create_lets_only_one_request_win_a_race_for_the_same_name()
     {
         await TestDatabase.EnsureMigratedAsync();
         var request = new CreateRoomRequest(UniqueName(), 1, 4, null);
@@ -74,7 +74,7 @@ public class RoomsHandlerTests
             return await new CreateRoomHandler(db, TimeProvider.System).HandleAsync(request, CancellationToken.None);
         }));
 
-        Assert.Equal(1, results.Count(room => room is not null));
+        Assert.Equal(1, results.Count(result => result.Outcome == CreateRoomOutcome.Created));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class RoomsHandlerTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
-        var room = await new CreateRoomHandler(db, TimeProvider.System)
+        var (_, room) = await new CreateRoomHandler(db, TimeProvider.System)
             .HandleAsync(new CreateRoomRequest(UniqueName(), 1, 4, null), CancellationToken.None);
         var options = Options.Create(new StreamRoomOccupancyOptions { Interval = TimeSpan.FromMilliseconds(10) });
         var handler = new StreamRoomOccupancyHandler(db, TimeProvider.System, options);
@@ -146,7 +146,7 @@ public class RoomsHandlerTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext();
-        var room = await new CreateRoomHandler(db, TimeProvider.System)
+        var (_, room) = await new CreateRoomHandler(db, TimeProvider.System)
             .HandleAsync(new CreateRoomRequest(UniqueName(), 1, 4, null), CancellationToken.None);
         var start = TestClock.MondayMorning.AddMinutes(-30);
         var end = TestClock.MondayMorning.AddMinutes(30);

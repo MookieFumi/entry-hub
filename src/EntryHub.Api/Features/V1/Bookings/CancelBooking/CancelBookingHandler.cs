@@ -3,6 +3,7 @@ using System.Security.Claims;
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
+using EntryHub.Api.Features.V1.Rules;
 using EntryHub.Api.Security;
 
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +32,7 @@ public abstract record CancelBookingResult
 public sealed class CancelBookingHandler(
     EntryHubDbContext db,
     BookingPolicy policy,
+    TenantRulesReader rulesReader,
     TimeProvider clock,
     IAuthorizationService authorization)
 {
@@ -56,7 +58,9 @@ public sealed class CancelBookingHandler(
         var now = clock.GetUtcNow();
         var caller = Caller.From(user);
 
-        if (policy.EvaluateCancellation(booking.StartAt, now, caller.IsFacilities) is { } violation)
+        var rules = await rulesReader.GetAsync(cancellationToken);
+
+        if (policy.EvaluateCancellation(rules, booking.StartAt, now, caller.IsFacilities) is { } violation)
         {
             return new CancelBookingResult.TooLate(violation);
         }

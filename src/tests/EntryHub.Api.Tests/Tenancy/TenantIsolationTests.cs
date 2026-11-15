@@ -112,7 +112,7 @@ public class TenantIsolationTests
     {
         await TestDatabase.EnsureMigratedAsync();
         await using var db = TestDatabase.CreateContext(tenantId: TestTenants.Other);
-        var room = new EntryHub.Api.Domain.Rooms.Room { Id = Guid.CreateVersion7(), Name = UniqueName(), Capacity = 3, CreatedAt = DateTimeOffset.UtcNow };
+        var room = new EntryHub.Api.Domain.Rooms.Room { Id = Guid.CreateVersion7(), SiteId = TestSites.Other, Name = UniqueName(), Capacity = 3, CreatedAt = DateTimeOffset.UtcNow };
         db.Rooms.Add(room);
         await db.SaveChangesAsync();
 

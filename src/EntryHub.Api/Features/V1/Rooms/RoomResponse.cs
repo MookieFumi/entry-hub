@@ -4,6 +4,7 @@ namespace EntryHub.Api.Features.V1.Rooms;
 
 public sealed record RoomResponse(
     Guid Id,
+    Guid SiteId,
     string Name,
     int Floor,
     int Capacity,
@@ -12,5 +13,5 @@ public sealed record RoomResponse(
     DateTimeOffset CreatedAt)
 {
     public static RoomResponse From(Room room) =>
-        new(room.Id, room.Name, room.Floor, room.Capacity, room.Equipment, room.IsActive, room.CreatedAt);
+        new(room.Id, room.SiteId, room.Name, room.Floor, room.Capacity, room.Equipment, room.IsActive, room.CreatedAt);
 }

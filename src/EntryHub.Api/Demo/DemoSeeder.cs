@@ -1,6 +1,7 @@
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
+using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Domain.Tenants;
 using EntryHub.Api.Tenancy;
 
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EntryHub.Api.Demo;
 
 /// <summary>
-/// Creates the data of a demo: two customers, each with its own rooms and a few bookings. It can run any number of
+/// Creates the data of a demo: two customers, each with its own sites, rooms and a few bookings. It can run any number of
 /// times: it adds only what is missing, so it never duplicates or changes what a person has edited since.
 /// </summary>
 public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, TimeProvider clock)
@@ -22,22 +23,34 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
 
     private static readonly DemoTenant[] Tenants =
     [
-        new(AcmeId, "Acme Corporation",
+        new(AcmeId, "Acme Corporation", Rules: null,
         [
-            new("Aula Magna", 0, 40, ["Projector", "Video conferencing", "Whiteboard"]),
-            new("Sala Cervantes", 1, 12, ["Screen", "Video conferencing"]),
-            new("Sala Goya", 1, 8, ["Screen", "Whiteboard"]),
-            new("Sala Picasso", 2, 6, ["Screen"]),
-            new("Cabina 1", 2, 2, []),
-            new("Sala Dalí", 3, 20, ["Projector", "Video conferencing", "Wheelchair access"]),
+            new("Madrid HQ", OfficeTimeZone, new(8, 0), new(20, 0),
+            [
+                new("Aula Magna", 0, 40, ["Projector", "Video conferencing", "Whiteboard"]),
+                new("Sala Cervantes", 1, 12, ["Screen", "Video conferencing"]),
+                new("Sala Goya", 1, 8, ["Screen", "Whiteboard"]),
+                new("Sala Picasso", 2, 6, ["Screen"]),
+                new("Cabina 1", 2, 2, []),
+                new("Sala Dalí", 3, 20, ["Projector", "Video conferencing", "Wheelchair access"]),
+            ]),
+            new("London office", "Europe/London", new(9, 0), new(17, 30),
+            [
+                new("Thames", 1, 10, ["Screen", "Video conferencing"]),
+                new("Tower", 2, 6, ["Whiteboard"]),
+            ]),
         ]),
-        new(GlobexId, "Globex Industries",
+        // Globex chose stricter rules than the defaults, so the two demo tenants behave differently.
+        new(GlobexId, "Globex Industries", new DemoRules(MaxDurationMinutes: 120, MaxActiveBookings: 3),
         [
-            new("Boardroom", 5, 16, ["Projector", "Video conferencing"]),
-            new("Brainstorm", 4, 10, ["Whiteboard", "Screen"]),
-            new("Focus A", 4, 4, ["Screen"]),
-            new("Focus B", 4, 4, []),
-            new("Training room", 1, 30, ["Projector", "Wheelchair access", "Induction loop"]),
+            new("Main office", OfficeTimeZone, new(8, 0), new(20, 0),
+            [
+                new("Boardroom", 5, 16, ["Projector", "Video conferencing"]),
+                new("Brainstorm", 4, 10, ["Whiteboard", "Screen"]),
+                new("Focus A", 4, 4, ["Screen"]),
+                new("Focus B", 4, 4, []),
+                new("Training room", 1, 30, ["Projector", "Wheelchair access", "Induction loop"]),
+            ]),
         ]),
     ];
 
@@ -60,17 +73,56 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
             await db.SaveChangesAsync(cancellationToken);
         }
 
+        var existingSites = await db.Sites.ToListAsync(cancellationToken);
         var existingNames = await db.Rooms.Select(room => room.Name).ToListAsync(cancellationToken);
-        foreach (var room in tenant.Rooms.Where(room => !existingNames.Contains(room.Name)))
+
+        foreach (var demoSite in tenant.Sites)
         {
-            db.Rooms.Add(new Room
+            var site = existingSites.Find(existing => existing.Name == demoSite.Name);
+
+            if (site is null)
             {
-                Id = Guid.CreateVersion7(),
-                Name = room.Name,
-                Floor = room.Floor,
-                Capacity = room.Capacity,
-                Equipment = [.. room.Equipment],
-                CreatedAt = now,
+                site = new Site
+                {
+                    Id = Guid.CreateVersion7(),
+                    Name = demoSite.Name,
+                    TimeZoneId = demoSite.TimeZone,
+                    Opens = demoSite.Opens,
+                    Closes = demoSite.Closes,
+                    CreatedAt = now,
+                };
+                db.Sites.Add(site);
+                existingSites.Add(site);
+            }
+
+            foreach (var room in demoSite.Rooms.Where(room => !existingNames.Contains(room.Name)))
+            {
+                db.Rooms.Add(new Room
+                {
+                    Id = Guid.CreateVersion7(),
+                    SiteId = site.Id,
+                    Name = room.Name,
+                    Floor = room.Floor,
+                    Capacity = room.Capacity,
+                    Equipment = [.. room.Equipment],
+                    CreatedAt = now,
+                });
+            }
+        }
+
+        if (tenant.Rules is { } rules && !await db.TenantRules.AnyAsync(cancellationToken))
+        {
+            var defaults = new BookingRulesOptions();
+            db.TenantRules.Add(new TenantRules
+            {
+                MinDurationMinutes = (int)defaults.MinDuration.TotalMinutes,
+                MaxDurationMinutes = rules.MaxDurationMinutes,
+                SlotMinutes = (int)defaults.Slot.TotalMinutes,
+                MinLeadTimeMinutes = (int)defaults.MinLeadTime.TotalMinutes,
+                MaxAdvanceDays = (int)defaults.MaxAdvance.TotalDays,
+                CancellationNoticeMinutes = (int)defaults.CancellationNotice.TotalMinutes,
+                MaxActiveBookingsPerEmployee = rules.MaxActiveBookings,
+                UpdatedAt = now,
             });
         }
 
@@ -83,7 +135,8 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
             return;
         }
 
-        var rooms = await db.Rooms.OrderBy(room => room.Name).Take(3).ToListAsync(cancellationToken);
+        var firstSite = existingSites.OrderBy(site => site.CreatedAt).ThenBy(site => site.Id).First();
+        var rooms = await db.Rooms.Where(room => room.SiteId == firstSite.Id).OrderBy(room => room.Name).Take(3).ToListAsync(cancellationToken);
         var days = NextWeekdays(now, rooms.Count);
         for (var index = 0; index < rooms.Count; index++)
         {
@@ -131,7 +184,11 @@ public sealed class DemoSeeder(DbContextOptions<EntryHubDbContext> options, Time
         return [.. result];
     }
 
-    private sealed record DemoTenant(Guid Id, string Name, DemoRoom[] Rooms);
+    private sealed record DemoTenant(Guid Id, string Name, DemoRules? Rules, DemoSite[] Sites);
+
+    private sealed record DemoRules(int MaxDurationMinutes, int MaxActiveBookings);
+
+    private sealed record DemoSite(string Name, string TimeZone, TimeOnly Opens, TimeOnly Closes, DemoRoom[] Rooms);
 
     private sealed record DemoRoom(string Name, int Floor, int Capacity, string[] Equipment);
 }

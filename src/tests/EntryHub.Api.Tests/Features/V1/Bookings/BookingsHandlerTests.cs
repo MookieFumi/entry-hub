@@ -33,6 +33,7 @@ public class BookingsHandlerTests
         var room = new Room
         {
             Id = Guid.CreateVersion7(),
+            SiteId = TestSites.Default,
             Name = $"Room {Guid.NewGuid():N}",
             Floor = 1,
             Capacity = capacity,
@@ -53,7 +54,7 @@ public class BookingsHandlerTests
         TimeProvider? clock = null)
     {
         await using var db = TestDatabase.CreateContext();
-        var handler = new CreateBookingHandler(db, TestPolicy.Default(), clock ?? TestClock.Default);
+        var handler = new CreateBookingHandler(db, TestPolicy.Default(), TestPolicy.Reader(db), clock ?? TestClock.Default);
 
         return await handler.HandleAsync(
             caller,
@@ -65,7 +66,7 @@ public class BookingsHandlerTests
     {
         await using var db = TestDatabase.CreateContext();
 
-        return await new CancelBookingHandler(db, TestPolicy.Default(), clock ?? TestClock.Default, TestAuthorization.Service)
+        return await new CancelBookingHandler(db, TestPolicy.Default(), TestPolicy.Reader(db), clock ?? TestClock.Default, TestAuthorization.Service)
             .HandleAsync(TestUsers.PrincipalFor(caller), bookingId, CancellationToken.None);
     }
 

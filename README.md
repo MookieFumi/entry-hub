@@ -61,12 +61,16 @@ bookings, reads rooms) and `Facilities` (also creates rooms and cancels any book
 |---|---|---|---|
 | `GET /api/v1/health` | `Health/GetHealth` | anyone | 200, or 503 when PostgreSQL does not answer |
 | `GET /api/v1/me` | `CurrentUser/GetMe` | any role | user id, role, tenant id and tenant name |
-| `GET /api/v1/rules` | `Rules/GetRules` | any role | the booking rules the server enforces (durations, hours, notice, limit) |
-| `POST /api/v1/rooms` | `Rooms/CreateRoom` | Facilities | 201, 400 on a bad body, 409 when the name is taken |
+| `GET /api/v1/rules` | `Rules/GetRules` | any role | the booking rules of the caller's tenant (durations, notice, limit); the hours, days and zone are those of its default site |
+| `PUT /api/v1/rules` | `Rules/UpdateRules` | Facilities | sets the rules of the tenant for new bookings; 400 on absurd values |
+| `GET /api/v1/sites` | `Sites/ListSites` | any role | the active sites of the tenant; Facilities can add `includeInactive=true` |
+| `POST /api/v1/sites` | `Sites/CreateSite` | Facilities | 201, 400 on a bad zone or hours, 409 when the name is taken |
+| `PATCH /api/v1/sites/{id}` | `Sites/UpdateSite` | Facilities | edit the zone, hours and days, or deactivate (`isActive=false`); 404, 409 |
+| `POST /api/v1/rooms` | `Rooms/CreateRoom` | Facilities | 201, 400 on a bad body or an unknown site, 409 when the name is taken in the site; without `siteId` the room goes to the oldest active site |
 | `GET /api/v1/rooms/{id}` | `Rooms/GetRoom` | any role | 200 or 404 |
 | `PATCH /api/v1/rooms/{id}` | `Rooms/UpdateRoom` | Facilities | edit or deactivate (`isActive=false`); 404, 409 when the name is taken |
-| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor` and `minCapacity`, paging with `page` and `pageSize`; Facilities can add `includeInactive=true` |
-| `GET /api/v1/rooms/availability` | `Rooms/SearchAvailability` | any role | rooms free in `from`..`to` (max 31 days), filters `attendees`, `minCapacity`, `floor` |
+| `GET /api/v1/rooms` | `Rooms/ListRooms` | any role | filters `floor`, `minCapacity` and `siteId`, paging with `page` and `pageSize`; Facilities can add `includeInactive=true` |
+| `GET /api/v1/rooms/availability` | `Rooms/SearchAvailability` | any role | rooms free in `from`..`to` (max 31 days), filters `attendees`, `minCapacity`, `floor`, `siteId` |
 | `GET /api/v1/rooms/{id}/schedule` | `Rooms/GetRoomSchedule` | any role | busy ranges in `from`..`to`; title and organizer only for Facilities and the organizer |
 | `GET /api/v1/rooms/{id}/occupancy` | `Rooms/StreamRoomOccupancy` | any role | Server-Sent Events; free or occupied every 5 seconds |
 | `POST /api/v1/bookings` | `Bookings/CreateBooking` | any role | 201, 400 bad body, 422 broken rule, 409 slot taken |
@@ -104,10 +108,19 @@ Every error body is `application/problem+json` (`AddProblemDetails()` plus `UseE
 
 ### Business rules
 
-They live in `BookingRulesOptions` and can be changed in the `BookingRules` configuration section:
-15 minutes to 4 hours in 15-minute steps, Monday to Friday from 08:00 to 20:00 in the office time zone
-(`Europe/Madrid`), starting between 15 minutes and 90 days from now, cancellable until 15 minutes before the start
-(Facilities at any time), and at most 5 active bookings per Employee (Facilities has no limit).
+Each tenant has its own rules, and each site its own hours.
+
+- **Per tenant** (`PUT /rules`, Facilities): shortest and longest booking, the slot, how soon and how far ahead a
+  booking can start, the cancellation notice and the active bookings per Employee. A tenant that never stored its
+  own gets the defaults of the `BookingRules` configuration section (`BookingRulesOptions`): 15 minutes to 4 hours in
+  15-minute steps, starting between 15 minutes and 90 days from now, cancellable until 15 minutes before the start
+  (Facilities at any time), and at most 5 active bookings per Employee (Facilities has no limit).
+- **Per site** (`POST` and `PATCH /sites`): IANA time zone, opening and closing time and open days. The migration
+  gave every existing tenant a "Main office" (Monday to Friday, 08:00 to 20:00, `Europe/Madrid`) with its rooms. The
+  hours that decide a booking are those of the site of the room, so the same time can be fine in one site and too
+  late in another.
+- A room belongs to one site and its name is unique inside it. A deactivated site and its rooms leave the listings and
+  cannot be booked; their bookings stay.
 
 ## Run it locally
 
@@ -211,8 +224,8 @@ default off it never touches the database:
 
 | Tenant | Id | Rooms |
 |---|---|---|
-| Acme Corporation | `de000000-0000-0000-0000-0000000000a1` | 6, from a 2-person booth to a 40-person hall |
-| Globex Industries | `de000000-0000-0000-0000-0000000000a2` | 5 |
+| Acme Corporation | `de000000-0000-0000-0000-0000000000a1` | 8 in two sites: Madrid HQ (6, from a 2-person booth to a 40-person hall) and London office (2, 09:00 to 17:30 London time) |
+| Globex Industries | `de000000-0000-0000-0000-0000000000a2` | 5 in one site, with its own rules: bookings of at most 2 hours and 3 active bookings per Employee |
 
 Each one gets three bookings at 10:00 office time on the next working days. Running it again adds only what is
 missing: rooms are matched by name, so a room you edited or deactivated is left as you changed it, and a tenant that

@@ -16,13 +16,19 @@ public static class CreateRoomEndpoint
         CreateRoomHandler handler,
         CancellationToken cancellationToken)
     {
-        var room = await handler.HandleAsync(request, cancellationToken);
+        var (outcome, room) = await handler.HandleAsync(request, cancellationToken);
 
-        return room is null
-            ? TypedResults.Problem(
+        return outcome switch
+        {
+            CreateRoomOutcome.Created => TypedResults.Created($"/api/v1/rooms/{room!.Id}", room),
+            CreateRoomOutcome.SiteNotFound => TypedResults.Problem(
+                title: "Site not found",
+                detail: "The site does not exist, is not active, or the tenant has no site yet.",
+                statusCode: StatusCodes.Status400BadRequest),
+            _ => TypedResults.Problem(
                 title: "Room name already in use",
-                detail: $"A room named '{request.Name.Trim()}' already exists.",
-                statusCode: StatusCodes.Status409Conflict)
-            : TypedResults.Created($"/api/v1/rooms/{room.Id}", room);
+                detail: $"A room named '{request.Name.Trim()}' already exists in the site.",
+                statusCode: StatusCodes.Status409Conflict),
+        };
     }
 }

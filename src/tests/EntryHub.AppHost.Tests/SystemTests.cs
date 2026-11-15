@@ -66,7 +66,9 @@ public class SystemTests(EntryHubSystem system)
         // under test is the reminders service finding it, not how the API creates it.
         await using (var db = new EntryHubDbContext(options, DefaultTenant))
         {
-            var room = new Room { Id = Guid.CreateVersion7(), Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 8, CreatedAt = now };
+            // The migrations gave the default tenant its first site.
+            var siteId = await db.Sites.Select(site => site.Id).FirstAsync();
+            var room = new Room { Id = Guid.CreateVersion7(), SiteId = siteId, Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 8, CreatedAt = now };
             db.Rooms.Add(room);
             db.Bookings.Add(new Booking
             {

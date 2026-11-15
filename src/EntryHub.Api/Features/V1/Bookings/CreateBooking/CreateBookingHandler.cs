@@ -1,6 +1,7 @@
 using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
+using EntryHub.Api.Features.V1.Rules;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -8,12 +9,12 @@ using Npgsql;
 
 namespace EntryHub.Api.Features.V1.Bookings.CreateBooking;
 
-public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy policy, TimeProvider clock)
+public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy policy, TenantRulesReader rulesReader, TimeProvider clock)
 {
     public async Task<CreateBookingResult> HandleAsync(Caller caller, CreateBookingRequest request, CancellationToken cancellationToken)
     {
-        var room = await db.Rooms.AsNoTracking()
-            .SingleOrDefaultAsync(room => room.Id == request.RoomId && room.IsActive, cancellationToken);
+        var room = await db.Rooms.AsNoTracking().Include(room => room.Site)
+            .SingleOrDefaultAsync(room => room.Id == request.RoomId && room.IsActive && room.Site!.IsActive, cancellationToken);
 
         if (room is null)
         {
@@ -22,7 +23,8 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         }
 
         var now = clock.GetUtcNow();
-        var violations = policy.EvaluateNewBooking(request.StartAt, request.EndAt, request.Attendees, room.Capacity, now).ToList();
+        var rules = await rulesReader.GetAsync(cancellationToken);
+        var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, request.StartAt, request.EndAt, request.Attendees, room.Capacity, now).ToList();
 
         if (!caller.IsFacilities)
         {
@@ -32,11 +34,11 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
                     && booking.EndAt > now,
                 cancellationToken);
 
-            if (active >= policy.MaxActiveBookingsPerEmployee)
+            if (active >= rules.MaxActiveBookingsPerEmployee)
             {
                 violations.Add(new(
                     BookingRuleCodes.TooManyActiveBookings,
-                    $"You already have {active} active bookings; the limit is {policy.MaxActiveBookingsPerEmployee}."));
+                    $"You already have {active} active bookings; the limit is {rules.MaxActiveBookingsPerEmployee}."));
             }
         }
 

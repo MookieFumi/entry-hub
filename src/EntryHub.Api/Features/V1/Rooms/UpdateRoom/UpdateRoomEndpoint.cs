@@ -10,6 +10,7 @@ public static class UpdateRoomEndpoint
         group.MapPatch("/{id:guid}", HandleAsync).WithName("UpdateRoom").WithSummary("Edits a room or deactivates it. Facilities only.")
             .RequireAuthorization(Policies.Facilities)
             .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
@@ -28,6 +29,10 @@ public static class UpdateRoomEndpoint
                 title: "Room name already in use",
                 detail: $"A room named '{request.Name?.Trim()}' already exists.",
                 statusCode: StatusCodes.Status409Conflict),
+            UpdateRoomOutcome.SiteNotFound => TypedResults.Problem(
+                title: "Site not found",
+                detail: "The site does not exist or is not active.",
+                statusCode: StatusCodes.Status400BadRequest),
             _ => TypedResults.Problem(title: "Room not found", statusCode: StatusCodes.Status404NotFound),
         };
     }

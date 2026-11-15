@@ -1,32 +1,27 @@
 using System.Globalization;
 
-using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
-
-using Microsoft.Extensions.Options;
 
 namespace EntryHub.Api.Features.V1.Rules.GetRules;
 
-public sealed class GetRulesHandler(IOptions<BookingRulesOptions> options)
+public sealed class GetRulesHandler(TenantRulesReader reader)
 {
-    private static readonly DayOfWeek[] OfficeDays =
-        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday];
-
     /// <summary>
-    /// Today the rules are the same for every tenant. They move to the tenant when rules are stored per customer.
+    /// The rules of the tenant of the token. The office fields come from its default site, the oldest active one.
     /// </summary>
-    public RulesResponse Handle(Caller caller)
+    public async Task<RulesResponse> HandleAsync(Caller caller, CancellationToken cancellationToken)
     {
-        var rules = options.Value;
+        var rules = await reader.GetAsync(cancellationToken);
+        var site = await reader.GetDefaultSiteHoursAsync(cancellationToken);
 
         return new RulesResponse(
             (int)rules.MinDuration.TotalMinutes,
             (int)rules.MaxDuration.TotalMinutes,
             (int)rules.Slot.TotalMinutes,
-            rules.OfficeOpens.ToString("HH\\:mm", CultureInfo.InvariantCulture),
-            rules.OfficeCloses.ToString("HH\\:mm", CultureInfo.InvariantCulture),
-            OfficeDays,
-            rules.OfficeTimeZoneId,
+            site.Opens.ToString("HH\\:mm", CultureInfo.InvariantCulture),
+            site.Closes.ToString("HH\\:mm", CultureInfo.InvariantCulture),
+            site.OpenDays.Order().ToList(),
+            site.TimeZoneId,
             (int)rules.MinLeadTime.TotalMinutes,
             (int)rules.MaxAdvance.TotalDays,
             (int)rules.CancellationNotice.TotalMinutes,

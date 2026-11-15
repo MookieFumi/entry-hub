@@ -37,7 +37,7 @@ public class RowLevelSecurityTests
                 END IF;
             END $$;
             GRANT USAGE ON SCHEMA public TO {Role};
-            GRANT SELECT, INSERT, UPDATE, DELETE ON rooms, bookings, tenants TO {Role};
+            GRANT SELECT, INSERT, UPDATE, DELETE ON rooms, bookings, tenants, sites, tenant_rules TO {Role};
             """,
             admin))
         {
@@ -56,7 +56,7 @@ public class RowLevelSecurityTests
     private static async Task<Room> NewRoomAsync(Guid tenantId)
     {
         await using var db = TestDatabase.CreateContext(tenantId: tenantId);
-        var room = new Room { Id = Guid.CreateVersion7(), Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 4, CreatedAt = TestClock.MondayMorning };
+        var room = new Room { Id = Guid.CreateVersion7(), SiteId = TestSites.For(tenantId), Name = $"Room {Guid.NewGuid():N}", Floor = 1, Capacity = 4, CreatedAt = TestClock.MondayMorning };
         db.Rooms.Add(room);
         await db.SaveChangesAsync();
         return room;

@@ -24,6 +24,8 @@ public class DemoSeedingServiceTests
         await db.Database.ExecuteSqlRawAsync("""
             DELETE FROM bookings WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             DELETE FROM rooms WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
+            DELETE FROM sites WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
+            DELETE FROM tenant_rules WHERE "TenantId" IN ('de000000-0000-0000-0000-0000000000a1', 'de000000-0000-0000-0000-0000000000a2');
             """);
     }
 
@@ -59,7 +61,7 @@ public class DemoSeedingServiceTests
             await Task.Delay(100);
         }
 
-        Assert.Equal(6, await RoomsOfAsync(DemoSeeder.AcmeId));
+        Assert.Equal(8, await RoomsOfAsync(DemoSeeder.AcmeId));
         Assert.Equal(5, await RoomsOfAsync(DemoSeeder.GlobexId));
     }
 }

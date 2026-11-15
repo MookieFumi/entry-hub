@@ -15,7 +15,12 @@ public sealed class ListRoomsHandler(EntryHubDbContext db)
 
         if (!(caller.IsFacilities && query.IncludeInactive == true))
         {
-            rooms = rooms.Where(room => room.IsActive);
+            rooms = rooms.Where(room => room.IsActive && room.Site!.IsActive);
+        }
+
+        if (query.SiteId is { } siteId)
+        {
+            rooms = rooms.Where(room => room.SiteId == siteId);
         }
 
         if (query.Floor is { } floor)

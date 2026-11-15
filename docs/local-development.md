@@ -134,5 +134,5 @@ Another origin: `export Cors__AllowedOrigins__0=http://localhost:3000`. The fron
 | 403 on everything | The token has no valid `tenant_id`, or its role claim is not the one in `Authentication:RoleClaim` |
 | 403 on one endpoint | The role is not enough (for example an Employee creating a room) |
 | 404 for data you just created | The token belongs to another tenant |
-| 422 creating a booking | A booking rule; the body says which (`GET /rules` lists them) |
+| 422 creating a booking | A booking rule; the body says which (`GET /rules` lists the rules of the tenant and `GET /sites` the hours of each site) |
 | CORS error in the browser | The page origin is not in `Cors:AllowedOrigins` |

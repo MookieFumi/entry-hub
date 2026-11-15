@@ -1,3 +1,4 @@
+using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Tenancy;
 
 namespace EntryHub.Api.Domain.Rooms;
@@ -10,6 +11,10 @@ public sealed class Room : ITenantOwned
     public Guid Id { get; init; }
 
     public Guid TenantId { get; set; }
+
+    public Guid SiteId { get; set; }
+
+    public Site? Site { get; set; }
 
     public required string Name { get; set; }
 
