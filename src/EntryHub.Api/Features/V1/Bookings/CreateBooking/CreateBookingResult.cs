@@ -11,9 +11,20 @@ public abstract record CreateBookingResult
     {
     }
 
-    public sealed record Created(BookingResponse Booking) : CreateBookingResult;
+    /// <param name="Replayed">True when the request repeated an earlier <c>Idempotency-Key</c> and nothing new was created.</param>
+    public sealed record Created(BookingResponse Booking, bool Replayed = false) : CreateBookingResult;
 
     public sealed record RulesBroken(IReadOnlyList<RuleViolation> Violations) : CreateBookingResult;
 
     public sealed record Overlaps : CreateBookingResult;
+
+    /// <summary>
+    /// The <c>Idempotency-Key</c> was already used with a different request.
+    /// </summary>
+    public sealed record KeyReused : CreateBookingResult;
+
+    /// <summary>
+    /// The <c>Idempotency-Key</c> is empty or longer than allowed.
+    /// </summary>
+    public sealed record KeyInvalid : CreateBookingResult;
 }

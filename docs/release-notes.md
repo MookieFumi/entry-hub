@@ -1,5 +1,11 @@
 # Release notes
 
+## v1.1.0 (in progress)
+
+- `POST /bookings` accepts an optional `Idempotency-Key` header. Retrying with the same key and body returns the original
+  booking (with `Idempotent-Replayed: true`); the same key with a different body returns 422. Keys are private to each
+  user and are remembered for 24 hours.
+
 ## v1.0.0
 
 The first complete version: a multi-tenant room-booking API, with a React front end in its own repository.
