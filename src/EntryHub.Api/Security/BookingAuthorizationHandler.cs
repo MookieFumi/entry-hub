@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 namespace EntryHub.Api.Security;
 
 /// <summary>
-/// Object-level authorization for bookings: only the organizer and Facilities may read, cancel or move one.
+/// Object-level authorization for bookings: only the organizer and Facilities may read, cancel, move or check in to one.
 /// </summary>
 /// <remarks>
 /// The endpoint policy (<see cref="Policies.AnyEmployee"/>) runs before the booking is loaded, so it can only say
@@ -24,7 +24,8 @@ public sealed class BookingAuthorizationHandler : AuthorizationHandler<Operation
     {
         if (requirement.Name != BookingOperations.Read.Name
             && requirement.Name != BookingOperations.Cancel.Name
-            && requirement.Name != BookingOperations.Reschedule.Name)
+            && requirement.Name != BookingOperations.Reschedule.Name
+            && requirement.Name != BookingOperations.CheckIn.Name)
         {
             return Task.CompletedTask;
         }

@@ -66,6 +66,11 @@ public sealed class Booking : ITenantOwned
     public DateTimeOffset? CancelledAt { get; set; }
 
     /// <summary>
+    /// When someone confirmed they showed up; <see langword="null"/> until then. Set once.
+    /// </summary>
+    public DateTimeOffset? CheckedInAt { get; set; }
+
+    /// <summary>
     /// When the reminders service told the organizer that the booking is about to start; it is set once.
     /// </summary>
     public DateTimeOffset? ReminderSentAt { get; set; }

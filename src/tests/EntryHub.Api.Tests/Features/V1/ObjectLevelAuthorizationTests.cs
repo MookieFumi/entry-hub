@@ -32,6 +32,7 @@ public class ObjectLevelAuthorizationTests
     {
         ["GetBooking"] = (HttpMethod.Get, "/api/v1/bookings/{id}", null),
         ["CancelBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/cancel", null),
+        ["CheckInBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/check-in", null),
         ["RescheduleBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/reschedule", new RescheduleBookingRequest(Tuesday.AddHours(1), Tuesday.AddHours(2))),
     };
 

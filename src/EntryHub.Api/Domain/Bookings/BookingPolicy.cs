@@ -60,6 +60,27 @@ public sealed class BookingPolicy
         return violations;
     }
 
+    /// <summary>
+    /// How long before the start people can check in.
+    /// </summary>
+    public static readonly TimeSpan CheckInOpensBeforeStart = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// A confirmed booking can be checked in from <see cref="CheckInOpensBeforeStart"/> before it starts until it ends.
+    /// </summary>
+    /// <returns>The reason it cannot be checked in, or <see langword="null"/> when it can.</returns>
+    public RuleViolation? EvaluateCheckIn(BookingStatus status, DateTimeOffset start, DateTimeOffset end, DateTimeOffset now)
+    {
+        if (status != BookingStatus.Confirmed || end <= now)
+        {
+            return new(BookingRuleCodes.NotActive, "Only a confirmed booking that has not ended can be checked in.");
+        }
+
+        return start - now > CheckInOpensBeforeStart
+            ? new(BookingRuleCodes.TooEarlyToCheckIn, $"Check-in opens {CheckInOpensBeforeStart.TotalMinutes:0} minutes before the booking starts.")
+            : null;
+    }
+
     /// <returns>The reason the booking cannot be cancelled, or <see langword="null"/> when it can.</returns>
     public RuleViolation? EvaluateCancellation(BookingRules rules, DateTimeOffset start, DateTimeOffset now, bool isFacilities) =>
         !isFacilities && start - now < rules.CancellationNotice

@@ -2,6 +2,9 @@
 
 ## v1.1.0 (in progress)
 
+- **Check-in.** The organizer or Facilities confirm that people showed up with `POST /bookings/{id}/check-in`, from 15
+  minutes before the start until the end of the booking. The booking shows `checkedInAt`; checking in twice keeps the
+  first moment. Too early gets a 422 with `TooEarlyToCheckIn`; a cancelled or finished booking gets `NotActive`.
 - **Tenant data export.** Facilities download everything the tenant has stored (sites, holidays, equipment catalog,
   rooms, blocks, rules, bookings and the audit trail) as one JSON document with `GET /tenant/export`. Each export is
   recorded in the audit trail as `Exported`.
