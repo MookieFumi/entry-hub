@@ -15,7 +15,10 @@ public sealed record BookingResponse(
     DateTimeOffset? CancelledAt,
     DateTimeOffset? RescheduledAt = null,
     string? CreatedBy = null,
-    DateTimeOffset? CheckedInAt = null)
+    DateTimeOffset? CheckedInAt = null,
+    string? DecidedBy = null,
+    DateTimeOffset? DecidedAt = null,
+    string? DecisionReason = null)
 {
     public static BookingResponse From(Booking booking) =>
         new(
@@ -31,5 +34,8 @@ public sealed record BookingResponse(
             booking.CancelledAt,
             booking.RescheduledAt,
             booking.CreatedBy ?? booking.OrganizerId,
-            booking.CheckedInAt);
+            booking.CheckedInAt,
+            booking.DecidedBy,
+            booking.DecidedAt,
+            booking.DecisionReason);
 }

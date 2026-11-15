@@ -71,6 +71,18 @@ public sealed class Booking : ITenantOwned
     public DateTimeOffset? CheckedInAt { get; set; }
 
     /// <summary>
+    /// The <c>sub</c> claim of the Facilities user who approved or rejected a pending booking.
+    /// </summary>
+    public string? DecidedBy { get; set; }
+
+    public DateTimeOffset? DecidedAt { get; set; }
+
+    /// <summary>
+    /// Why a pending booking was rejected, when whoever rejected it said so.
+    /// </summary>
+    public string? DecisionReason { get; set; }
+
+    /// <summary>
     /// When the reminders service told the organizer that the booking is about to start; it is set once.
     /// </summary>
     public DateTimeOffset? ReminderSentAt { get; set; }
