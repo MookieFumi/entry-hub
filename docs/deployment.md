@@ -6,9 +6,15 @@ repository needs so that the `deploy` workflow can do that. The step-by-step set
 [supabase-setup.md](supabase-setup.md) (database roles, sign-in hook, demo users); here is only what GitHub and Azure
 must agree on.
 
+Every step has two ways: the Azure CLI commands, and the same thing in the browser (Azure portal and the GitHub web).
+The menu names in the browser steps were written from memory of the current interfaces and have not been checked
+against live accounts; the portals change often, so if a menu is missing, use the search box of the portal.
+
 ## How a release goes
 
-1. `git tag v1.0.0 && git push origin v1.0.0`.
+1. Create the tag `v1.0.0`: `git tag v1.0.0 && git push origin v1.0.0`, or in GitHub *Releases → Draft a new release →
+   Choose a tag → Create new tag on publish → Publish release* (the `release` workflow attaches the contract to a
+   release that already exists).
 2. **build**: runs the API tests, publishes the API and keeps it as an artifact for 30 days.
 3. **deploy** (environment `production`, so it waits for the reviewers you set there):
    1. applies the migrations by running the published API with the `migrate` command and the owner connection string;
@@ -30,8 +36,9 @@ them so that the previous version keeps working on the new schema (add, do not r
 
 ## Azure: federated login without secrets
 
-Create an app registration that GitHub can sign in as, and give it rights over the web app only. With the Azure CLI,
-replacing the values in capitals:
+Create an app registration that GitHub can sign in as, and give it rights over the web app only.
+
+**Azure CLI**, replacing the values in capitals:
 
 ```bash
 APP_ID=$(az ad app create --display-name entryhub-github --query appId -o tsv)
@@ -50,12 +57,31 @@ az role assignment create --assignee "$APP_ID" --role "Website Contributor" \
   --scope "$(az webapp show -g RESOURCE_GROUP -n WEBAPP_NAME --query id -o tsv)"
 ```
 
+**Azure portal** (https://portal.azure.com):
+
+1. *Microsoft Entra ID → App registrations → New registration*: name `entryhub-github`, *Single tenant only*, no
+   redirect URI, *Register*. Copy **Application (client) ID** (this is `AZURE_CLIENT_ID`) and **Directory (tenant) ID**
+   (`AZURE_TENANT_ID`) from the *Overview*.
+2. In that app: *Certificates & secrets → Federated credentials → Add credential*. Scenario *GitHub Actions deploying
+   Azure resources*, organization `mookie-studio`, repository `entry-hub`, entity type *Environment*, environment name
+   `production`, name `github-production`, *Add*.
+3. Open the App Service: *Access control (IAM) → Add → Add role assignment*. Role *Website Contributor* (under *Job
+   function roles*), members: *User, group, or service principal → Select members → `entryhub-github`*, then *Review +
+   assign*.
+4. *Subscriptions →* your subscription: copy the **Subscription ID** (`AZURE_SUBSCRIPTION_ID`).
+
 The `subject` must match the repository owner and name exactly; if the repository moves, create the credential again.
 
 ## GitHub: variables, secrets and environment
 
-*Settings → Environments → New environment* named `production`; add the people who must approve a deployment as
-*Required reviewers*, and restrict *Deployment branches and tags* to the tags `v*`.
+In the GitHub web, on the repository:
+
+1. *Settings → Environments → New environment* named `production`. Tick *Required reviewers* and add the people who
+   must approve a deployment, and under *Deployment branches and tags* choose *Selected branches and tags* and add a
+   rule of type *Tag* with the pattern `v*`. (Required reviewers may not be available on a private repository of a free
+   account.)
+2. *Settings → Secrets and variables → Actions → Variables → New repository variable* for each variable below.
+3. *Settings → Environments → production → Environment secrets → Add environment secret* for the secret below.
 
 | Where | Name | Kind | Value |
 |---|---|---|---|
@@ -66,13 +92,15 @@ The `subject` must match the repository owner and name exactly; if the repositor
 | Repository variable | `AZURE_SUBSCRIPTION_ID` | variable | Subscription id |
 | Environment `production` | `MIGRATIONS_CONNECTION_STRING` | secret | Npgsql connection string of the **owner** role of the database (session pooler on Supabase) |
 
-The API itself gets its settings in the App Service (*Settings → Environment variables*), not from GitHub:
+The API itself gets its settings in the App Service, not from GitHub: in the portal, *Settings → Environment variables
+→ App settings* (*Advanced edit* takes a JSON list of `name` and `value`), or `az webapp config appsettings set`:
 `ConnectionStrings__EntryHub` with the **application** role, the `Authentication__*` settings of Supabase Auth, and
 `Cors__AllowedOrigins__0` with the URL of the front end. Rate limiting and demo data have their own settings
-(`RateLimiting__*`, `Demo__Seed`); see the README.
+(`RateLimiting__*`, `Demo__Seed`); see the README. After changing a setting, restart the app (*Overview → Restart*).
 
 ## Keeping Supabase awake
 
 The free Supabase plan pauses a project after a week without activity. The `keep-alive` workflow calls
 `GET /api/v1/health` every day at about 06:17 UTC; the call asks PostgreSQL, which counts as activity, and it also
-wakes the App Service, which sleeps without Always On. It does nothing while `API_URL` is empty.
+wakes the App Service, which sleeps without Always On. It does nothing while `API_URL` is empty. To try it now:
+*Actions → keep-alive → Run workflow*.
