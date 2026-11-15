@@ -11,7 +11,8 @@ public sealed record BookingRules(
     TimeSpan MinLeadTime,
     TimeSpan MaxAdvance,
     TimeSpan CancellationNotice,
-    int MaxActiveBookingsPerEmployee)
+    int MaxActiveBookingsPerEmployee,
+    int AutoReleaseMinutes = 0)
 {
     /// <summary>
     /// The rules of a tenant that has not stored its own: the values of the <c>BookingRules</c> configuration.

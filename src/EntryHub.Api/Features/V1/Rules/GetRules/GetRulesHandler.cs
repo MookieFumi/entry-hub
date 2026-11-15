@@ -25,6 +25,7 @@ public sealed class GetRulesHandler(TenantRulesReader reader)
             (int)rules.MinLeadTime.TotalMinutes,
             (int)rules.MaxAdvance.TotalDays,
             (int)rules.CancellationNotice.TotalMinutes,
-            caller.IsFacilities ? null : rules.MaxActiveBookingsPerEmployee);
+            caller.IsFacilities ? null : rules.MaxActiveBookingsPerEmployee,
+            rules.AutoReleaseMinutes);
     }
 }

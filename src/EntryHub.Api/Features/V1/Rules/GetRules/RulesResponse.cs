@@ -14,6 +14,7 @@ namespace EntryHub.Api.Features.V1.Rules.GetRules;
 /// <param name="MinLeadTimeMinutes">A booking starts at least this many minutes from now.</param>
 /// <param name="MaxAdvanceDays">A booking starts at most this many days from now.</param>
 /// <param name="CancellationNoticeMinutes">An Employee can cancel until this many minutes before the start.</param>
+/// <param name="AutoReleaseMinutes">Minutes after the start that a confirmed booking nobody checked in to is cancelled by the system; 0 when the release is off.</param>
 /// <param name="MaxActiveBookings">Active bookings the caller can hold; <see langword="null"/> when there is no limit.</param>
 public sealed record RulesResponse(
     int MinDurationMinutes,
@@ -26,4 +27,5 @@ public sealed record RulesResponse(
     int MinLeadTimeMinutes,
     int MaxAdvanceDays,
     int CancellationNoticeMinutes,
-    int? MaxActiveBookings);
+    int? MaxActiveBookings,
+    int AutoReleaseMinutes = 0);

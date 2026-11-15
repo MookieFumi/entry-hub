@@ -23,6 +23,12 @@ public sealed class TenantRules : ITenantOwned
 
     public int MaxActiveBookingsPerEmployee { get; set; }
 
+    /// <summary>
+    /// Minutes after the start of a confirmed booking that nobody checked in to before the reminders service cancels
+    /// it and frees the room. Zero turns the release off.
+    /// </summary>
+    public int AutoReleaseMinutes { get; set; }
+
     public DateTimeOffset UpdatedAt { get; set; }
 
     public BookingRules ToRules() => new(
@@ -32,5 +38,6 @@ public sealed class TenantRules : ITenantOwned
         TimeSpan.FromMinutes(MinLeadTimeMinutes),
         TimeSpan.FromDays(MaxAdvanceDays),
         TimeSpan.FromMinutes(CancellationNoticeMinutes),
-        MaxActiveBookingsPerEmployee);
+        MaxActiveBookingsPerEmployee,
+        AutoReleaseMinutes);
 }

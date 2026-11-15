@@ -57,18 +57,22 @@ internal static class TestDatabase
     /// A tenant of its own with one site, for tests that change or delete everything the tenant has and so cannot
     /// share <see cref="TestTenants.Default"/> with the rest of the run.
     /// </summary>
-    public static async Task<Guid> CreateTenantAsync(string name)
+    public static async Task<Guid> CreateTenantAsync(string name) => (await CreateTenantWithSiteAsync(name)).Tenant;
+
+    /// <inheritdoc cref="CreateTenantAsync"/>
+    public static async Task<(Guid Tenant, Guid Site)> CreateTenantWithSiteAsync(string name)
     {
         await EnsureMigratedAsync();
         var id = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
         await using var db = Create(ConnectionString, id);
         await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO tenants (\"Id\", \"Name\", \"CreatedAt\") VALUES ({id}, {name}, now())");
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"""
             INSERT INTO sites ("Id", "TenantId", "Name", "TimeZoneId", "Opens", "Closes", "OpenDays", "IsActive", "CreatedAt")
-            VALUES ({Guid.NewGuid()}, {id}, 'Main office', 'Europe/Madrid', '08:00', '20:00', ARRAY[1, 2, 3, 4, 5], true, '2000-01-01 00:00:00+00')
+            VALUES ({siteId}, {id}, 'Main office', 'Europe/Madrid', '08:00', '20:00', ARRAY[1, 2, 3, 4, 5], true, '2000-01-01 00:00:00+00')
             """);
-        return id;
+        return (id, siteId);
     }
 
     private static EntryHubDbContext Create(string connectionString, Guid tenantId)
