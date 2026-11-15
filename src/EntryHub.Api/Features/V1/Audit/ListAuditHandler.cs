@@ -14,8 +14,8 @@ public sealed class ListAuditHandler(EntryHubDbContext db)
 
         if (!string.IsNullOrWhiteSpace(query.EntityType))
         {
-            var type = query.EntityType.Trim().ToLower();
-            entries = entries.Where(entry => entry.EntityType.ToLower() == type);
+            var type = query.EntityType.Trim().ToLowerInvariant();
+            entries = entries.Where(entry => entry.EntityType.ToLowerInvariant() == type);
         }
 
         if (query.EntityId is { } entityId)
