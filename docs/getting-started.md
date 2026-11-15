@@ -3,7 +3,9 @@
 This guide takes you from a token to your first booking. Every call below works against a local API
 (`http://localhost:5178`) and against a deployed one; only `API` changes. Starting the API alone, a second tenant and
 every endpoint are in [local-development.md](local-development.md). The full contract is
-[`contracts/EntryHub.Api.json`](../contracts/EntryHub.Api.json), also served as OpenAPI and a Scalar page by the API.
+[`contracts/EntryHub.Api.json`](../contracts/EntryHub.Api.json). The API also serves it at `/openapi/v1.json`: in Development
+with an interactive Scalar page at `/scalar/v1`; elsewhere there is no Scalar page and the document needs a token with
+the `Facilities` role.
 
 ## 1. Get a token
 

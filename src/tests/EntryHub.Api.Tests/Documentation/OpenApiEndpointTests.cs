@@ -68,7 +68,7 @@ public class OpenApiEndpointTests
 
         using var document = JsonDocument.Parse(json);
         var info = document.RootElement.GetProperty("info");
-        Assert.Equal("https://github.com/MookieFumi/entry-hub/issues", info.GetProperty("contact").GetProperty("url").GetString());
+        Assert.Equal("https://github.com/mookie-studio/entry-hub/issues", info.GetProperty("contact").GetProperty("url").GetString());
         Assert.Equal("MIT", info.GetProperty("license").GetProperty("name").GetString());
     }
 

@@ -15,7 +15,7 @@ public static class OpenApiExtensions
     private const string DocumentName = "v1";
     private const string BearerScheme = "Bearer";
     private const string ProbesTag = "Probes";
-    private const string RepositoryUrl = "https://github.com/MookieFumi/entry-hub";
+    private const string RepositoryUrl = "https://github.com/mookie-studio/entry-hub";
 
     public static IServiceCollection AddEntryHubOpenApi(this IServiceCollection services) =>
         services.AddOpenApi(DocumentName, options =>
