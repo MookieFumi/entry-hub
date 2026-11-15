@@ -11,6 +11,7 @@ public abstract record CreateBookingResult
     {
     }
 
+    /// <param name="Booking">The booking that was created, or the one created by the earlier request.</param>
     /// <param name="Replayed">True when the request repeated an earlier <c>Idempotency-Key</c> and nothing new was created.</param>
     public sealed record Created(BookingResponse Booking, bool Replayed = false) : CreateBookingResult;
 
