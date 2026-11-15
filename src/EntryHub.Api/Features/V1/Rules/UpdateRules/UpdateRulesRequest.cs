@@ -13,6 +13,7 @@ namespace EntryHub.Api.Features.V1.Rules.UpdateRules;
 /// <param name="MaxAdvanceDays">A booking starts at most this many days from now.</param>
 /// <param name="CancellationNoticeMinutes">An Employee can cancel until this many minutes before the start.</param>
 /// <param name="MaxActiveBookings">Active bookings an Employee can hold.</param>
+/// <param name="AutoReleaseMinutes">Minutes after the start that a confirmed booking nobody checked in to is cancelled by the system; 0 (also when left out) turns it off.</param>
 public sealed record UpdateRulesRequest(
     [property: Range(1, 1440)] int MinDurationMinutes,
     [property: Range(1, 1440)] int MaxDurationMinutes,
@@ -20,4 +21,5 @@ public sealed record UpdateRulesRequest(
     [property: Range(0, 10080)] int MinLeadTimeMinutes,
     [property: Range(1, 730)] int MaxAdvanceDays,
     [property: Range(0, 10080)] int CancellationNoticeMinutes,
-    [property: Range(1, 1000)] int MaxActiveBookings);
+    [property: Range(1, 1000)] int MaxActiveBookings,
+    [property: Range(0, 240)] int AutoReleaseMinutes = 0);

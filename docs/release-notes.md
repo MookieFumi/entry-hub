@@ -2,6 +2,10 @@
 
 ## v1.1.0 (in progress)
 
+- **Release of bookings nobody checks in to.** A tenant can set `autoReleaseMinutes` in its rules (`PUT /rules`, 0 to
+  240, off by default). The reminders service then cancels a confirmed booking that nobody checked in to within that
+  many minutes after its start (while it has not ended), so the room is free again. The cancellation is audited with
+  the actor `system`. Like the reminders, it needs the reminders service to be running, which the demo does not deploy.
 - **Rooms that need approval.** A room can be marked `requiresApproval` (when it is created or edited). A booking of
   such a room by an Employee is created as `Pending` (201) and holds the room like a confirmed one: nobody else can
   book it and the availability search skips it. Bookings by Facilities are confirmed at once. A pending booking can be

@@ -251,13 +251,14 @@ public class SitesAndRulesTests
         var defaults = await firstFacilities.GetFromJsonAsync<RulesResponse>("/api/v1/rules", TestJson.Options);
         Assert.Equal((15, 240, 5), (defaults!.MinDurationMinutes, defaults.MaxDurationMinutes, 5));
 
-        var changed = await firstFacilities.PutAsJsonAsync("/api/v1/rules", new UpdateRulesRequest(30, 90, 30, 60, 30, 120, 2));
+        var changed = await firstFacilities.PutAsJsonAsync("/api/v1/rules", new UpdateRulesRequest(30, 90, 30, 60, 30, 120, 2, 20));
         Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
 
         var mine = await firstFacilities.GetFromJsonAsync<RulesResponse>("/api/v1/rules", TestJson.Options);
         var theirs = await secondEmployee.GetFromJsonAsync<RulesResponse>("/api/v1/rules", TestJson.Options);
 
         Assert.Equal((30, 90, 30, 60, 30, 120), (mine!.MinDurationMinutes, mine.MaxDurationMinutes, mine.SlotMinutes, mine.MinLeadTimeMinutes, mine.MaxAdvanceDays, mine.CancellationNoticeMinutes));
+        Assert.Equal((0, 20), (defaults.AutoReleaseMinutes, mine.AutoReleaseMinutes));
         Assert.Equal(240, theirs!.MaxDurationMinutes);
         Assert.Equal(2, (await api.ClientForTenant(first, Unique("ana"), Roles.Employee).GetFromJsonAsync<RulesResponse>("/api/v1/rules", TestJson.Options))!.MaxActiveBookings);
     }

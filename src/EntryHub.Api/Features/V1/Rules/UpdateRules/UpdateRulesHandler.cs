@@ -32,6 +32,7 @@ public sealed class UpdateRulesHandler(EntryHubDbContext db, TimeProvider clock)
         rules.MaxAdvanceDays = request.MaxAdvanceDays;
         rules.CancellationNoticeMinutes = request.CancellationNoticeMinutes;
         rules.MaxActiveBookingsPerEmployee = request.MaxActiveBookings;
+        rules.AutoReleaseMinutes = request.AutoReleaseMinutes;
         rules.UpdatedAt = clock.GetUtcNow();
 
         await db.SaveChangesAsync(cancellationToken);

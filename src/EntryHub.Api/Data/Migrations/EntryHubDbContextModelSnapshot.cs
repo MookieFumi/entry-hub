@@ -200,6 +200,9 @@ namespace EntryHub.Api.Data.Migrations
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AutoReleaseMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<int>("CancellationNoticeMinutes")
                         .HasColumnType("integer");
 

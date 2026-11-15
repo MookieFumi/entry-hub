@@ -3816,6 +3816,16 @@
             ],
             "description": "Active bookings the caller can hold; `null` when there is no limit.",
             "format": "int32"
+          },
+          "autoReleaseMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes after the start that a confirmed booking nobody checked in to is cancelled by the system; 0 when the release is off.",
+            "format": "int32",
+            "default": 0
           }
         },
         "description": "The booking rules of the tenant of the token, the ones a client can show or check before it sends a booking. The server still decides: a booking that\nbreaks a rule gets a 422 with the code of the rule."
@@ -4359,6 +4369,18 @@
             ],
             "description": "Active bookings an Employee can hold.",
             "format": "int32"
+          },
+          "autoReleaseMinutes": {
+            "maximum": 240,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Minutes after the start that a confirmed booking nobody checked in to is cancelled by the system; 0 (also when left out) turns it off.",
+            "format": "int32",
+            "default": 0
           }
         },
         "description": "The rules of the tenant. All fields are required: the tenant keeps exactly what is sent. Opening hours, days and\ntime zone belong to each site, see `PATCH /sites/{id}`."
