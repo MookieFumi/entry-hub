@@ -11,7 +11,8 @@ public sealed record CreateBookingRequest(
     DateTimeOffset StartAt,
     DateTimeOffset EndAt,
     [property: Range(1, 500)] int Attendees,
-    [property: StringLength(200)] string? OnBehalfOf = null) : IValidatableObject
+    [property: StringLength(200)] string? OnBehalfOf = null,
+    RecurrenceRequest? Recurrence = null) : IValidatableObject
 {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

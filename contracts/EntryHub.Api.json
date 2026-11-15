@@ -2724,6 +2724,32 @@
               "null",
               "string"
             ]
+          },
+          "seriesId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "seriesPosition": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "series": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SeriesOutcome"
+              }
+            ]
           }
         }
       },
@@ -2806,6 +2832,16 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "recurrence": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RecurrenceRequest"
+              }
             ]
           }
         },
@@ -3400,6 +3436,57 @@
           }
         }
       },
+      "RecurrenceFrequency": {
+        "enum": [
+          "Daily",
+          "Weekly"
+        ]
+      },
+      "RecurrenceRequest": {
+        "required": [
+          "frequency"
+        ],
+        "type": "object",
+        "properties": {
+          "frequency": {
+            "description": "Daily or Weekly.",
+            "$ref": "#/components/schemas/RecurrenceFrequency"
+          },
+          "interval": {
+            "maximum": 52,
+            "minimum": 1,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Every how many days or weeks, from 1 to 52.",
+            "format": "int32",
+            "default": 1
+          },
+          "count": {
+            "maximum": 52,
+            "minimum": 1,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "How many occurrences to create, including the first one (up to 52).",
+            "format": "int32"
+          },
+          "until": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last day, in the time zone of the site, on which an occurrence may start.",
+            "format": "date"
+          }
+        },
+        "description": "Makes the booking repeat. Send exactly one of Count and Until."
+      },
       "RejectBookingRequest": {
         "required": [
           "reason"
@@ -3846,6 +3933,90 @@
             "description": "Explanation for a person."
           }
         }
+      },
+      "SeriesOccurrence": {
+        "required": [
+          "position",
+          "startAt",
+          "endAt",
+          "bookingId",
+          "violations"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bookingId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleViolation"
+            }
+          }
+        },
+        "description": "One occurrence of a series: booked when BookingId is set, otherwise skipped for the rules in\nViolations."
+      },
+      "SeriesOutcome": {
+        "required": [
+          "id",
+          "requested",
+          "created",
+          "occurrences"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the series, also in `seriesId` of each created booking.",
+            "format": "uuid"
+          },
+          "requested": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many occurrences the recurrence asked for.",
+            "format": "int32"
+          },
+          "created": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many of them were booked.",
+            "format": "int32"
+          },
+          "occurrences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SeriesOccurrence"
+            },
+            "description": "Every requested occurrence, booked or skipped."
+          }
+        },
+        "description": "What a recurring request produced: one entry for each occurrence it asked for. Only the response that creates the\nseries has it."
       },
       "SiteHolidayResponse": {
         "required": [

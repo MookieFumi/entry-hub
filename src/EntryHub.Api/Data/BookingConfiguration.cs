@@ -22,6 +22,8 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(booking => booking.Status).HasConversion<string>().HasMaxLength(20);
         builder.HasOne<Room>().WithMany().HasForeignKey(booking => booking.RoomId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Tenant>().WithMany().HasForeignKey(booking => booking.TenantId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<BookingSeries>().WithMany().HasForeignKey(booking => booking.SeriesId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(booking => booking.SeriesId);
         builder.HasIndex(booking => new { booking.TenantId, booking.OrganizerId, booking.Status, booking.EndAt });
 
         // The rule that two confirmed bookings of one room cannot overlap, buffers included, is an exclusion constraint

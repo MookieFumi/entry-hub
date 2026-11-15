@@ -126,6 +126,12 @@ namespace EntryHub.Api.Data.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SeriesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("SeriesPosition")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("StartAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -146,12 +152,56 @@ namespace EntryHub.Api.Data.Migrations
 
                     b.HasIndex("RoomId");
 
+                    b.HasIndex("SeriesId");
+
                     b.HasIndex("TenantId", "OrganizerId", "Status", "EndAt");
 
                     b.ToTable("bookings", null, t =>
                         {
                             t.HasCheckConstraint("ck_bookings_end_after_start", "\"EndAt\" > \"StartAt\"");
                         });
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Bookings.BookingSeries", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Count")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Interval")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OrganizerId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("Until")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("booking_series", (string)null);
                 });
 
             modelBuilder.Entity("EntryHub.Api.Domain.Bookings.IdempotencyRecord", b =>
@@ -474,6 +524,26 @@ namespace EntryHub.Api.Data.Migrations
                 });
 
             modelBuilder.Entity("EntryHub.Api.Domain.Bookings.Booking", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Rooms.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EntryHub.Api.Domain.Bookings.BookingSeries", null)
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Bookings.BookingSeries", b =>
                 {
                     b.HasOne("EntryHub.Api.Domain.Rooms.Room", null)
                         .WithMany()
