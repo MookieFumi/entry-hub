@@ -7,6 +7,8 @@ namespace EntryHub.Api.Features.V1.Audit;
 
 public sealed class ListAuditHandler(EntryHubDbContext db)
 {
+    private static readonly string[] KnownTypes = ["Booking", "Room", "Site", "Rules", "Feature", "SiteHoliday", "RoomBlock"];
+
     public async Task<PagedResponse<AuditResponse>> HandleAsync(ListAuditQuery query, CancellationToken cancellationToken)
     {
         var paging = Paging.Normalize(query.Page, query.PageSize);
@@ -14,8 +16,9 @@ public sealed class ListAuditHandler(EntryHubDbContext db)
 
         if (!string.IsNullOrWhiteSpace(query.EntityType))
         {
-            var type = query.EntityType.Trim().ToLowerInvariant();
-            entries = entries.Where(entry => entry.EntityType.ToLowerInvariant() == type);
+            // The names are a closed set, so the match is done here and the query compares exact values.
+            var type = KnownTypes.FirstOrDefault(known => string.Equals(known, query.EntityType.Trim(), StringComparison.OrdinalIgnoreCase));
+            entries = entries.Where(entry => entry.EntityType == type);
         }
 
         if (query.EntityId is { } entityId)
