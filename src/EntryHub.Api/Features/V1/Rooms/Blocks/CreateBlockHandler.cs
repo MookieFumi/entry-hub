@@ -35,7 +35,7 @@ public sealed class CreateBlockHandler(EntryHubDbContext db, TimeProvider clock)
         var end = request.EndAt.ToUniversalTime();
 
         var inTheWay = await db.Bookings.AsNoTracking()
-            .Where(booking => booking.RoomId == roomId && booking.Status == BookingStatus.Confirmed && booking.StartAt < end && booking.EndAt > start)
+            .Where(booking => booking.RoomId == roomId && booking.Status != BookingStatus.Cancelled && booking.StartAt < end && booking.EndAt > start)
             .OrderBy(booking => booking.StartAt).Select(booking => booking.Id)
             .ToListAsync(cancellationToken);
 

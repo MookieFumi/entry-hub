@@ -13,6 +13,7 @@ namespace EntryHub.Api.Features.V1.Rooms.UpdateRoom;
 /// <param name="SiteId">Move the room to another active site of the tenant.</param>
 /// <param name="BufferBeforeMinutes">New minutes the room stays free before each booking; applies to bookings made or moved from now on.</param>
 /// <param name="BufferAfterMinutes">New minutes the room stays free after each booking; applies to bookings made or moved from now on.</param>
+/// <param name="RequiresApproval">Whether bookings by Employees wait for approval; applies to bookings made from now on.</param>
 /// <param name="IsActive"><see langword="false"/> takes the room out of the listings and out of new bookings; the bookings it already has stay.</param>
 public sealed record UpdateRoomRequest(
     [property: StringLength(100, MinimumLength = 1)] string? Name,
@@ -23,4 +24,5 @@ public sealed record UpdateRoomRequest(
     Guid? SiteId = null,
     List<Guid>? FeatureIds = null,
     [property: Range(0, 240)] int? BufferBeforeMinutes = null,
-    [property: Range(0, 240)] int? BufferAfterMinutes = null);
+    [property: Range(0, 240)] int? BufferAfterMinutes = null,
+    bool? RequiresApproval = null);

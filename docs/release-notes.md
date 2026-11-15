@@ -2,6 +2,10 @@
 
 ## v1.1.0 (in progress)
 
+- **Rooms that need approval.** A room can be marked `requiresApproval` (when it is created or edited). A booking of
+  such a room by an Employee is created as `Pending` (201) and holds the room like a confirmed one: nobody else can
+  book it and the availability search skips it. Bookings by Facilities are confirmed at once. A pending booking can be
+  cancelled by its organizer; approving and rejecting arrive next.
 - **Check-in.** The organizer or Facilities confirm that people showed up with `POST /bookings/{id}/check-in`, from 15
   minutes before the start until the end of the booking. The booking shows `checkedInAt`; checking in twice keeps the
   first moment. Too early gets a 422 with `TooEarlyToCheckIn`; a cancelled or finished booking gets `NotActive`.

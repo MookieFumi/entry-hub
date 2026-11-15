@@ -22,7 +22,7 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
             .Where(room => room.IsActive && room.Site!.IsActive && room.Capacity >= capacity)
             .Where(room => !db.Bookings.Any(booking =>
                 booking.RoomId == room.Id
-                && booking.Status == BookingStatus.Confirmed
+                && booking.Status != BookingStatus.Cancelled
                 && booking.BlockedFrom < to.AddMinutes(room.BufferAfterMinutes)
                 && booking.BlockedUntil > from.AddMinutes(-room.BufferBeforeMinutes)))
             .Where(room => !db.RoomBlocks.Any(block => block.RoomId == room.Id && block.StartAt < to && block.EndAt > from));

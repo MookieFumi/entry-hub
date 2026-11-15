@@ -25,7 +25,7 @@ public sealed class GetRoomScheduleHandler(EntryHubDbContext db)
 
         var bookings = await db.Bookings.AsNoTracking()
             .Where(booking => booking.RoomId == roomId
-                && booking.Status == BookingStatus.Confirmed
+                && booking.Status != BookingStatus.Cancelled
                 && booking.StartAt < to
                 && booking.EndAt > from)
             .OrderBy(booking => booking.StartAt).ThenBy(booking => booking.Id)

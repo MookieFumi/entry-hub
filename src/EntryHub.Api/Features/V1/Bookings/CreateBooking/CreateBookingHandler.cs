@@ -79,7 +79,7 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         {
             var active = await db.Bookings.CountAsync(
                 booking => booking.OrganizerId == caller.Id
-                    && booking.Status == BookingStatus.Confirmed
+                    && booking.Status != BookingStatus.Cancelled
                     && booking.EndAt > now,
                 cancellationToken);
 
@@ -106,6 +106,7 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             StartAt = request.StartAt.ToUniversalTime(),
             EndAt = request.EndAt.ToUniversalTime(),
             Attendees = request.Attendees,
+            Status = room.RequiresApproval && !caller.IsFacilities ? BookingStatus.Pending : BookingStatus.Confirmed,
             BufferBeforeMinutes = room.BufferBeforeMinutes,
             BufferAfterMinutes = room.BufferAfterMinutes,
             CreatedAt = now,
