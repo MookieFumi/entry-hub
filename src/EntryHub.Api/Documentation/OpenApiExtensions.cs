@@ -1,3 +1,6 @@
+using System.Text.Json.Nodes;
+
+using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Security;
 
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +18,7 @@ public static class OpenApiExtensions
     private const string DocumentName = "v1";
     private const string BearerScheme = "Bearer";
     private const string ProbesTag = "Probes";
+    private const string ExtensibleEnum = "x-extensible-enum";
     private const string RepositoryUrl = "https://github.com/mookie-studio/entry-hub";
 
     public static IServiceCollection AddEntryHubOpenApi(this IServiceCollection services) =>
@@ -50,6 +54,37 @@ public static class OpenApiExtensions
                 };
 
                 AddProbes(document);
+
+                return Task.CompletedTask;
+            });
+
+            // The status of a booking can gain values (Pending came with approvals), so the contract says so with
+            // x-extensible-enum: a client must cope with a value it does not know. The same schema is also used by
+            // the status filter of GET /bookings, which takes exactly the values that exist, so that parameter keeps a
+            // closed list (see below).
+            options.AddSchemaTransformer((schema, context, _) =>
+            {
+                if (context.JsonTypeInfo.Type == typeof(BookingStatus) && schema.Enum is { Count: > 0 } values)
+                {
+                    schema.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+                    schema.Extensions[ExtensibleEnum] = new JsonNodeExtension(new JsonArray([.. values.Select(value => (JsonNode?)JsonValue.Create(value.GetValue<string>()))]));
+                    schema.Enum = null;
+                }
+
+                return Task.CompletedTask;
+            });
+
+            options.AddOperationTransformer((operation, _, _) =>
+            {
+                if (operation.OperationId == "ListBookings")
+                {
+                    var status = operation.Parameters?.FirstOrDefault(parameter => parameter.Name == "Status");
+
+                    if (status is OpenApiParameter parameter)
+                    {
+                        parameter.Schema = new OpenApiSchema { Enum = [.. Enum.GetNames<BookingStatus>().Select(name => (JsonNode)JsonValue.Create(name)!)] };
+                    }
+                }
 
                 return Task.CompletedTask;
             });

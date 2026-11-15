@@ -1830,7 +1830,11 @@
             "in": "query",
             "description": "Only bookings in this status; every status when omitted.",
             "schema": {
-              "$ref": "#/components/schemas/BookingStatus"
+              "enum": [
+                "Confirmed",
+                "Cancelled",
+                "Pending"
+              ]
             }
           },
           {
@@ -2543,7 +2547,7 @@
         }
       },
       "BookingStatus": {
-        "enum": [
+        "x-extensible-enum": [
           "Confirmed",
           "Cancelled",
           "Pending"
