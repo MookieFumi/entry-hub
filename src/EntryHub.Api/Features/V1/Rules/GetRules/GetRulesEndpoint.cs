@@ -9,8 +9,8 @@ namespace EntryHub.Api.Features.V1.Rules.GetRules;
 public static class GetRulesEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
-        group.MapGet("/", HandleAsync).WithName("GetBookingRules").WithSummary("Gets the booking rules that apply to the caller.");
+        group.MapGet("/", HandleAsync).WithName("GetBookingRules").WithSummary("Gets the booking rules of the caller's tenant.");
 
-    private static Ok<RulesResponse> HandleAsync(ClaimsPrincipal user, GetRulesHandler handler) =>
-        TypedResults.Ok(handler.Handle(Caller.From(user)));
+    private static async Task<Ok<RulesResponse>> HandleAsync(ClaimsPrincipal user, GetRulesHandler handler, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await handler.HandleAsync(Caller.From(user), cancellationToken));
 }

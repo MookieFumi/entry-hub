@@ -14,7 +14,7 @@ public class BookingPolicyTests
     private static readonly BookingPolicy Policy = TestPolicy.Default();
 
     private static string[] Codes(DateTimeOffset start, DateTimeOffset end, int attendees = 4, int capacity = 8, DateTimeOffset? now = null) =>
-        [.. Policy.EvaluateNewBooking(start, end, attendees, capacity, now ?? Now).Select(violation => violation.Code)];
+        [.. Policy.EvaluateNewBooking(TestPolicy.Rules(), TestPolicy.Madrid(), start, end, attendees, capacity, now ?? Now).Select(violation => violation.Code)];
 
     [Fact]
     public void A_booking_inside_every_limit_has_no_violations() =>
@@ -109,14 +109,14 @@ public class BookingPolicyTests
     {
         var start = Now.AddMinutes(14);
 
-        Assert.Equal(BookingRuleCodes.TooLateToCancel, Policy.EvaluateCancellation(start, Now, isFacilities: false)?.Code);
+        Assert.Equal(BookingRuleCodes.TooLateToCancel, Policy.EvaluateCancellation(TestPolicy.Rules(), start, Now, isFacilities: false)?.Code);
     }
 
     [Fact]
     public void An_employee_can_cancel_exactly_at_the_notice_limit() =>
-        Assert.Null(Policy.EvaluateCancellation(Now.AddMinutes(15), Now, isFacilities: false));
+        Assert.Null(Policy.EvaluateCancellation(TestPolicy.Rules(), Now.AddMinutes(15), Now, isFacilities: false));
 
     [Fact]
     public void Facilities_can_cancel_at_any_time() =>
-        Assert.Null(Policy.EvaluateCancellation(Now.AddMinutes(1), Now, isFacilities: true));
+        Assert.Null(Policy.EvaluateCancellation(TestPolicy.Rules(), Now.AddMinutes(1), Now, isFacilities: true));
 }

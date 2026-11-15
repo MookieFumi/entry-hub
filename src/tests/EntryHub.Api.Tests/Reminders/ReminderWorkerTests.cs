@@ -21,7 +21,7 @@ public class ReminderWorkerTests
         var roomName = $"Room {Guid.NewGuid():N}";
         await using (var db = TestDatabase.CreateContext())
         {
-            var room = new Room { Id = Guid.CreateVersion7(), Name = roomName, Floor = 1, Capacity = 8, CreatedAt = TestClock.MondayMorning };
+            var room = new Room { Id = Guid.CreateVersion7(), SiteId = TestSites.Default, Name = roomName, Floor = 1, Capacity = 8, CreatedAt = TestClock.MondayMorning };
             db.Rooms.Add(room);
             db.Bookings.Add(new Booking
             {

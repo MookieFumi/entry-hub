@@ -4,6 +4,7 @@ using EntryHub.Api.Features.V1.Bookings.CreateBooking;
 using EntryHub.Api.Features.V1.Bookings.GetBooking;
 using EntryHub.Api.Features.V1.Bookings.ListBookings;
 using EntryHub.Api.Features.V1.Bookings.ListMyBookings;
+using EntryHub.Api.Features.V1.Rules;
 using EntryHub.Api.Security;
 
 namespace EntryHub.Api.Features.V1.Bookings;
@@ -14,6 +15,7 @@ public static class BookingsEndpoints
     {
         services.Configure<BookingRulesOptions>(configuration.GetSection("BookingRules"));
         services.AddSingleton<BookingPolicy>();
+        services.AddScoped<TenantRulesReader>();
 
         return services;
     }

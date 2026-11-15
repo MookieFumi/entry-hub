@@ -85,6 +85,15 @@ internal static class TestDatabase
         {
             await db.Database.ExecuteSqlInterpolatedAsync(
                 $"INSERT INTO tenants (\"Id\", \"Name\", \"CreatedAt\") VALUES ({id}, {name}, now()) ON CONFLICT DO NOTHING");
+
+            // The oldest active site of a tenant is where new rooms go, so these must be the oldest.
+            await using var forTenant = Create(ConnectionString, id);
+            await forTenant.Database.ExecuteSqlInterpolatedAsync(
+                $"""
+                INSERT INTO sites ("Id", "TenantId", "Name", "TimeZoneId", "Opens", "Closes", "OpenDays", "IsActive", "CreatedAt")
+                VALUES ({TestSites.For(id)}, {id}, 'Tests main office', 'Europe/Madrid', '08:00', '20:00', ARRAY[1, 2, 3, 4, 5], true, '2000-01-01 00:00:00+00')
+                ON CONFLICT DO NOTHING
+                """);
         }
     }
 }

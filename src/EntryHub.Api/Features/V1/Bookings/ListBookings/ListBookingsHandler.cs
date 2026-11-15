@@ -18,6 +18,11 @@ public sealed class ListBookingsHandler(EntryHubDbContext db)
             bookings = bookings.Where(booking => booking.RoomId == roomId);
         }
 
+        if (query.SiteId is { } siteId)
+        {
+            bookings = bookings.Where(booking => db.Rooms.Any(room => room.Id == booking.RoomId && room.SiteId == siteId));
+        }
+
         if (query.From is { } from)
         {
             bookings = bookings.Where(booking => booking.EndAt > from);

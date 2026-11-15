@@ -25,6 +25,7 @@ public class ReminderStoreTests
         var room = new Room
         {
             Id = Guid.CreateVersion7(),
+            SiteId = TestSites.Default,
             Name = $"Room {Guid.NewGuid():N}",
             Floor = 1,
             Capacity = 8,

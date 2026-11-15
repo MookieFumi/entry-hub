@@ -7,21 +7,38 @@ using Npgsql;
 
 namespace EntryHub.Api.Features.V1.Rooms.CreateRoom;
 
+public enum CreateRoomOutcome
+{
+    Created,
+    NameInUse,
+    SiteNotFound,
+}
+
 public sealed class CreateRoomHandler(EntryHubDbContext db, TimeProvider clock)
 {
-    /// <returns>The new room, or <see langword="null"/> when another room already has that name.</returns>
-    public async Task<RoomResponse?> HandleAsync(CreateRoomRequest request, CancellationToken cancellationToken)
+    public async Task<(CreateRoomOutcome Outcome, RoomResponse? Room)> HandleAsync(CreateRoomRequest request, CancellationToken cancellationToken)
     {
         var name = request.Name.Trim();
 
-        if (await db.Rooms.AnyAsync(room => room.Name == name, cancellationToken))
+        var sites = db.Sites.Where(site => site.IsActive);
+        var siteId = request.SiteId is { } requested
+            ? await sites.Where(site => site.Id == requested).Select(site => (Guid?)site.Id).SingleOrDefaultAsync(cancellationToken)
+            : await sites.OrderBy(site => site.CreatedAt).ThenBy(site => site.Id).Select(site => (Guid?)site.Id).FirstOrDefaultAsync(cancellationToken);
+
+        if (siteId is null)
         {
-            return null;
+            return (CreateRoomOutcome.SiteNotFound, null);
+        }
+
+        if (await db.Rooms.AnyAsync(room => room.SiteId == siteId && room.Name == name, cancellationToken))
+        {
+            return (CreateRoomOutcome.NameInUse, null);
         }
 
         var room = new Room
         {
             Id = Guid.CreateVersion7(),
+            SiteId = siteId.Value,
             Name = name,
             Floor = request.Floor,
             Capacity = request.Capacity,
@@ -38,9 +55,9 @@ public sealed class CreateRoomHandler(EntryHubDbContext db, TimeProvider clock)
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
             // Two requests with the same name raced past the check above; the unique index decided.
-            return null;
+            return (CreateRoomOutcome.NameInUse, null);
         }
 
-        return RoomResponse.From(room);
+        return (CreateRoomOutcome.Created, RoomResponse.From(room));
     }
 }

@@ -1,19 +1,16 @@
-using Microsoft.Extensions.Options;
+using EntryHub.Api.Domain.Sites;
 
 namespace EntryHub.Api.Domain.Bookings;
 
 /// <summary>
-/// The booking rules that need no database. It receives the clock value as an argument, so tests pick the time.
+/// The booking rules that need no database. It keeps no state: the rules of the tenant and the hours of the site
+/// arrive as arguments, and so does the clock value, so tests pick all of them.
 /// </summary>
-public sealed class BookingPolicy(IOptions<BookingRulesOptions> options)
+public sealed class BookingPolicy
 {
-    private readonly BookingRulesOptions _rules = options.Value;
-
-    private readonly TimeZoneInfo _office = TimeZoneInfo.FindSystemTimeZoneById(options.Value.OfficeTimeZoneId);
-
-    public int MaxActiveBookingsPerEmployee => _rules.MaxActiveBookingsPerEmployee;
-
     public IReadOnlyList<RuleViolation> EvaluateNewBooking(
+        BookingRules rules,
+        SiteHours site,
         DateTimeOffset start,
         DateTimeOffset end,
         int attendees,
@@ -23,36 +20,36 @@ public sealed class BookingPolicy(IOptions<BookingRulesOptions> options)
         var violations = new List<RuleViolation>();
         var duration = end - start;
 
-        if (duration < _rules.MinDuration)
+        if (duration < rules.MinDuration)
         {
-            violations.Add(new(BookingRuleCodes.DurationTooShort, $"A booking lasts at least {_rules.MinDuration.TotalMinutes:0} minutes."));
+            violations.Add(new(BookingRuleCodes.DurationTooShort, $"A booking lasts at least {rules.MinDuration.TotalMinutes:0} minutes."));
         }
 
-        if (duration > _rules.MaxDuration)
+        if (duration > rules.MaxDuration)
         {
-            violations.Add(new(BookingRuleCodes.DurationTooLong, $"A booking lasts at most {_rules.MaxDuration.TotalHours:0.##} hours."));
+            violations.Add(new(BookingRuleCodes.DurationTooLong, $"A booking lasts at most {rules.MaxDuration.TotalHours:0.##} hours."));
         }
 
-        if (!OnSlotBoundary(start) || !OnSlotBoundary(end))
+        if (!OnSlotBoundary(rules, start) || !OnSlotBoundary(rules, end))
         {
-            violations.Add(new(BookingRuleCodes.NotOnSlotBoundary, $"Start and end must fall on a multiple of {_rules.Slot.TotalMinutes:0} minutes."));
+            violations.Add(new(BookingRuleCodes.NotOnSlotBoundary, $"Start and end must fall on a multiple of {rules.Slot.TotalMinutes:0} minutes."));
         }
 
-        if (!WithinOfficeHours(start, end))
+        if (!WithinOpeningHours(site, start, end))
         {
             violations.Add(new(
                 BookingRuleCodes.OutsideOfficeHours,
-                $"Rooms can be booked Monday to Friday between {_rules.OfficeOpens:HH\\:mm} and {_rules.OfficeCloses:HH\\:mm} ({_rules.OfficeTimeZoneId}), within a single day."));
+                $"This site can be booked {DescribeDays(site.OpenDays)} between {site.Opens:HH\\:mm} and {site.Closes:HH\\:mm} ({site.TimeZoneId}), within a single day."));
         }
 
-        if (start < now + _rules.MinLeadTime)
+        if (start < now + rules.MinLeadTime)
         {
-            violations.Add(new(BookingRuleCodes.TooSoon, $"A booking must start at least {_rules.MinLeadTime.TotalMinutes:0} minutes from now."));
+            violations.Add(new(BookingRuleCodes.TooSoon, $"A booking must start at least {rules.MinLeadTime.TotalMinutes:0} minutes from now."));
         }
 
-        if (start > now + _rules.MaxAdvance)
+        if (start > now + rules.MaxAdvance)
         {
-            violations.Add(new(BookingRuleCodes.TooFarAhead, $"A booking cannot start more than {_rules.MaxAdvance.TotalDays:0} days from now."));
+            violations.Add(new(BookingRuleCodes.TooFarAhead, $"A booking cannot start more than {rules.MaxAdvance.TotalDays:0} days from now."));
         }
 
         if (attendees > roomCapacity)
@@ -64,21 +61,25 @@ public sealed class BookingPolicy(IOptions<BookingRulesOptions> options)
     }
 
     /// <returns>The reason the booking cannot be cancelled, or <see langword="null"/> when it can.</returns>
-    public RuleViolation? EvaluateCancellation(DateTimeOffset start, DateTimeOffset now, bool isFacilities) =>
-        !isFacilities && start - now < _rules.CancellationNotice
-            ? new(BookingRuleCodes.TooLateToCancel, $"A booking can be cancelled until {_rules.CancellationNotice.TotalMinutes:0} minutes before it starts.")
+    public RuleViolation? EvaluateCancellation(BookingRules rules, DateTimeOffset start, DateTimeOffset now, bool isFacilities) =>
+        !isFacilities && start - now < rules.CancellationNotice
+            ? new(BookingRuleCodes.TooLateToCancel, $"A booking can be cancelled until {rules.CancellationNotice.TotalMinutes:0} minutes before it starts.")
             : null;
 
-    private bool OnSlotBoundary(DateTimeOffset moment) => moment.UtcTicks % _rules.Slot.Ticks == 0;
+    private static bool OnSlotBoundary(BookingRules rules, DateTimeOffset moment) => moment.UtcTicks % rules.Slot.Ticks == 0;
 
-    private bool WithinOfficeHours(DateTimeOffset start, DateTimeOffset end)
+    private static bool WithinOpeningHours(SiteHours site, DateTimeOffset start, DateTimeOffset end)
     {
-        var localStart = TimeZoneInfo.ConvertTime(start, _office);
-        var localEnd = TimeZoneInfo.ConvertTime(end, _office);
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(site.TimeZoneId);
+        var localStart = TimeZoneInfo.ConvertTime(start, zone);
+        var localEnd = TimeZoneInfo.ConvertTime(end, zone);
 
         return localStart.Date == localEnd.Date
-            && localStart.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)
-            && TimeOnly.FromDateTime(localStart.DateTime) >= _rules.OfficeOpens
-            && TimeOnly.FromDateTime(localEnd.DateTime) <= _rules.OfficeCloses;
+            && site.OpenDays.Contains(localStart.DayOfWeek)
+            && TimeOnly.FromDateTime(localStart.DateTime) >= site.Opens
+            && TimeOnly.FromDateTime(localEnd.DateTime) <= site.Closes;
     }
+
+    private static string DescribeDays(IReadOnlyList<DayOfWeek> days) =>
+        days.Count == 0 ? "on no day" : "on " + string.Join(", ", days.Order().Select(day => day.ToString()));
 }

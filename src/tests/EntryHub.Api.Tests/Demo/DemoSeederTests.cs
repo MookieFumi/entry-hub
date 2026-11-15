@@ -30,11 +30,25 @@ public class DemoSeederTests
         var acmeRooms = await acme.Rooms.ToListAsync();
         var globexRooms = await globex.Rooms.ToListAsync();
 
-        Assert.Equal(6, acmeRooms.Count);
+        Assert.Equal(8, acmeRooms.Count);
         Assert.Equal(5, globexRooms.Count);
         Assert.Empty(acmeRooms.Select(room => room.Name).Intersect(globexRooms.Select(room => room.Name)));
         Assert.Equal(3, await acme.Bookings.CountAsync());
         Assert.Equal(3, await globex.Bookings.CountAsync());
+    }
+
+    [Fact]
+    public async Task The_demo_tenants_differ_in_sites_and_in_rules()
+    {
+        await TestDatabase.EnsureMigratedAsync();
+        await Seeder().SeedAsync(CancellationToken.None);
+
+        await using var acme = TestDatabase.CreateContext(tenantId: DemoSeeder.AcmeId);
+        await using var globex = TestDatabase.CreateContext(tenantId: DemoSeeder.GlobexId);
+
+        Assert.Equal(["Europe/London", "Europe/Madrid"], (await acme.Sites.Select(site => site.TimeZoneId).ToListAsync()).Order());
+        Assert.Empty(await acme.TenantRules.ToListAsync());
+        Assert.Equal(120, (await globex.TenantRules.SingleAsync()).MaxDurationMinutes);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
         var capacity = Math.Max(query.Attendees ?? 1, query.MinCapacity ?? 1);
 
         var rooms = db.Rooms.AsNoTracking()
-            .Where(room => room.IsActive && room.Capacity >= capacity)
+            .Where(room => room.IsActive && room.Site!.IsActive && room.Capacity >= capacity)
             .Where(room => !db.Bookings.Any(booking =>
                 booking.RoomId == room.Id
                 && booking.Status == BookingStatus.Confirmed
@@ -28,6 +28,11 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
         if (query.Floor is { } floor)
         {
             rooms = rooms.Where(room => room.Floor == floor);
+        }
+
+        if (query.SiteId is { } siteId)
+        {
+            rooms = rooms.Where(room => room.SiteId == siteId);
         }
 
         var found = await rooms.OrderBy(room => room.Floor).ThenBy(room => room.Name).ToListAsync(cancellationToken);

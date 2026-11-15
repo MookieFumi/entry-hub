@@ -11,6 +11,7 @@ public enum UpdateRoomOutcome
     Updated,
     NotFound,
     NameInUse,
+    SiteNotFound,
 }
 
 public sealed class UpdateRoomHandler(EntryHubDbContext db)
@@ -27,15 +28,24 @@ public sealed class UpdateRoomHandler(EntryHubDbContext db)
             return (UpdateRoomOutcome.NotFound, null);
         }
 
-        if (request.Name?.Trim() is { Length: > 0 } name && name != room.Name)
-        {
-            if (await db.Rooms.AnyAsync(other => other.Name == name && other.Id != id, cancellationToken))
-            {
-                return (UpdateRoomOutcome.NameInUse, null);
-            }
+        var siteChanged = request.SiteId is not null && request.SiteId != room.SiteId;
 
-            room.Name = name;
+        if (siteChanged && !await db.Sites.AnyAsync(site => site.Id == request.SiteId && site.IsActive, cancellationToken))
+        {
+            return (UpdateRoomOutcome.SiteNotFound, null);
         }
+
+        var newSiteId = siteChanged ? request.SiteId!.Value : room.SiteId;
+        var newName = request.Name?.Trim() is { Length: > 0 } trimmed ? trimmed : room.Name;
+
+        if ((siteChanged || newName != room.Name)
+            && await db.Rooms.AnyAsync(other => other.SiteId == newSiteId && other.Name == newName && other.Id != id, cancellationToken))
+        {
+            return (UpdateRoomOutcome.NameInUse, null);
+        }
+
+        room.SiteId = newSiteId;
+        room.Name = newName;
 
         room.Floor = request.Floor ?? room.Floor;
         room.Capacity = request.Capacity ?? room.Capacity;

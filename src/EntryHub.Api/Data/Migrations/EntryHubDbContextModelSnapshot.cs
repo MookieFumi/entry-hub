@@ -80,6 +80,40 @@ namespace EntryHub.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("EntryHub.Api.Domain.Bookings.TenantRules", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CancellationNoticeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxActiveBookingsPerEmployee")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxAdvanceDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinLeadTimeMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlotMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TenantId");
+
+                    b.ToTable("tenant_rules", (string)null);
+                });
+
             modelBuilder.Entity("EntryHub.Api.Domain.Rooms.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -106,17 +140,62 @@ namespace EntryHub.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Floor", "Capacity");
+
+                    b.ToTable("rooms", (string)null);
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Sites.Site", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<TimeOnly>("Closes")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.PrimitiveCollection<int[]>("OpenDays")
+                        .IsRequired()
+                        .HasColumnType("integer[]");
+
+                    b.Property<TimeOnly>("Opens")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId", "Name")
                         .IsUnique();
 
-                    b.HasIndex("TenantId", "Floor", "Capacity");
-
-                    b.ToTable("rooms", (string)null);
+                    b.ToTable("sites", (string)null);
                 });
 
             modelBuilder.Entity("EntryHub.Api.Domain.Tenants.Tenant", b =>
@@ -155,7 +234,33 @@ namespace EntryHub.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("EntryHub.Api.Domain.Bookings.TenantRules", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithOne()
+                        .HasForeignKey("EntryHub.Api.Domain.Bookings.TenantRules", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EntryHub.Api.Domain.Rooms.Room", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Sites.Site", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Sites.Site", b =>
                 {
                     b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
                         .WithMany()
