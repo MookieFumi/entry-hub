@@ -63,7 +63,7 @@ psql "$CONN" -c "insert into tenants (\"Id\",\"Name\",\"CreatedAt\") values (gen
 ### 2b. Supabase Auth (the same path as the demo in the cloud)
 
 Use it when you want to test the real provider. You need the Supabase project and its Custom Access Token Hook from
-`guia-setup-infra-demo.md` (it adds `tenant_id` and `user_role` to each token). Start the API with:
+[supabase-setup.md](supabase-setup.md) (it adds `tenant_id` and `user_role` to each token). Start the API with:
 
 ```bash
 export Authentication__Schemes__Bearer__Authority="https://<project-ref>.supabase.co/auth/v1"

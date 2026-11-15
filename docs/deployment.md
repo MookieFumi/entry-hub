@@ -3,7 +3,8 @@
 The demo runs on an Azure App Service (free F1 plan) with PostgreSQL and sign-in from Supabase. Pushing a tag such as
 `v1.0.0` builds the API, applies the migrations, deploys it and checks that it answers. This page lists what the
 repository needs so that the `deploy` workflow can do that. The step-by-step setup of the cloud resources is in
-`guia-setup-infra-demo.md` (project plan folder); here is only what GitHub and Azure must agree on.
+[supabase-setup.md](supabase-setup.md) (database roles, sign-in hook, demo users); here is only what GitHub and Azure
+must agree on.
 
 ## How a release goes
 

@@ -1,12 +1,12 @@
 # <img src="docs/logo.svg" alt="" width="40" height="40" align="center"> entry-hub
 
 <p>
-  <a href="https://github.com/MookieFumi/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/MookieFumi/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
-  <a href="https://mookiefumi.github.io/entry-hub/"><img alt="API docs" src="https://img.shields.io/badge/API-docs-85EA2D?logo=swagger&amp;logoColor=black&amp;style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/MookieFumi/entry-hub/main?display_timestamp=committer&amp;logo=git&amp;logoColor=white&amp;style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/MookieFumi/entry-hub?style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/MookieFumi/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/mookie-studio/entry-hub/ci.yml?branch=main&amp;label=CI&amp;logo=githubactions&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mookie-studio/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://mookie-studio.github.io/entry-hub/"><img alt="API docs" src="https://img.shields.io/badge/API-docs-85EA2D?logo=swagger&amp;logoColor=black&amp;style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/mookie-studio/entry-hub/main?display_timestamp=committer&amp;logo=git&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/mookie-studio/entry-hub?style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/pulls"><img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/mookie-studio/entry-hub?logo=github&amp;logoColor=white&amp;style=flat-square"></a>
 </p>
 <p>
   <img alt=".NET 10" src="https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&amp;logoColor=white&amp;style=flat-square">
@@ -18,7 +18,7 @@
 <p>
   <a href="https://www.conventionalcommits.org"><img alt="Conventional Commits" src="https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&amp;logoColor=white&amp;style=flat-square"></a>
   <a href="https://semver.org"><img alt="SemVer with GitVersion" src="https://img.shields.io/badge/SemVer-GitVersion-blue?logo=semver&amp;logoColor=white&amp;style=flat-square"></a>
-  <a href="https://github.com/MookieFumi/entry-hub/blob/main/.github/dependabot.yml"><img alt="Dependabot" src="https://img.shields.io/badge/Dependabot-enabled-025E8C?logo=dependabot&amp;logoColor=white&amp;style=flat-square"></a>
+  <a href="https://github.com/mookie-studio/entry-hub/blob/main/.github/dependabot.yml"><img alt="Dependabot" src="https://img.shields.io/badge/Dependabot-enabled-025E8C?logo=dependabot&amp;logoColor=white&amp;style=flat-square"></a>
 </p>
 
 Room booking API used as the demo project for the blog series about Minimal APIs, OpenAPI and Aspire.
@@ -96,7 +96,7 @@ Two barriers keep one tenant away from the data of another:
 Row-Level Security only protects when the API connects as an ordinary role. A superuser, or a role with `BYPASSRLS`
 (Supabase's `postgres` role has it), skips every policy. The Helm chart of this repository connects as the `postgres`
 superuser of its own container, so the second barrier is not active there; use a dedicated role in any real
-deployment (see `guia-setup-infra-demo.md` in the plan). The reminders service reads one tenant at a time for the same
+deployment (see [docs/supabase-setup.md](docs/supabase-setup.md)). The reminders service reads one tenant at a time for the same
 reason, setting `app.tenant_id` inside a transaction.
 
 ### Errors
@@ -393,7 +393,7 @@ kind delete cluster --name entry-hub
 
 Push a tag such as `v1.0.0` and the `release` workflow creates a GitHub Release with the contract attached
 (`openapi-v1.json`) and publishes the static docs of that version to GitHub Pages. Pages only ever shows the latest
-release (https://mookiefumi.github.io/entry-hub/); older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
+release (https://mookie-studio.github.io/entry-hub/); older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
 
 ## Tests
 
