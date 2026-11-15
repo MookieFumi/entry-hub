@@ -106,6 +106,8 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             StartAt = request.StartAt.ToUniversalTime(),
             EndAt = request.EndAt.ToUniversalTime(),
             Attendees = request.Attendees,
+            BufferBeforeMinutes = room.BufferBeforeMinutes,
+            BufferAfterMinutes = room.BufferAfterMinutes,
             CreatedAt = now,
         };
 

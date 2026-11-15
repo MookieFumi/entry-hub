@@ -73,6 +73,18 @@ namespace EntryHub.Api.Data.Migrations
                     b.Property<int>("Attendees")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset>("BlockedFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("BlockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("BufferAfterMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BufferBeforeMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -265,6 +277,12 @@ namespace EntryHub.Api.Data.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("BufferAfterMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BufferBeforeMinutes")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");

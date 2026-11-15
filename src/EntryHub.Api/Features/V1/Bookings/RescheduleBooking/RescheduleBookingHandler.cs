@@ -85,6 +85,8 @@ public sealed class RescheduleBookingHandler(
         }
 
         booking.RoomId = roomId;
+        booking.BufferBeforeMinutes = room.BufferBeforeMinutes;
+        booking.BufferAfterMinutes = room.BufferAfterMinutes;
         booking.StartAt = newStart;
         booking.EndAt = request.EndAt.ToUniversalTime();
         booking.RescheduledAt = now;

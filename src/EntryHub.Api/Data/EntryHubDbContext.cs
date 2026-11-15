@@ -71,6 +71,7 @@ public sealed class EntryHubDbContext(
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        StampBlockedRange();
         RecordAudit();
         StampTenant();
         return base.SaveChangesAsync(cancellationToken);
@@ -78,6 +79,7 @@ public sealed class EntryHubDbContext(
 
     public override int SaveChanges()
     {
+        StampBlockedRange();
         RecordAudit();
         StampTenant();
         return base.SaveChanges();
@@ -96,6 +98,19 @@ public sealed class EntryHubDbContext(
 
         var entries = AuditRecorder.Record([.. ChangeTracker.Entries()], actorId, TenantId, (clock ?? TimeProvider.System).GetUtcNow());
         AuditEntries.AddRange(entries);
+    }
+
+    /// <summary>
+    /// Keeps the range that the exclusion constraint compares in step with the time and buffers of each booking.
+    /// </summary>
+    private void StampBlockedRange()
+    {
+        foreach (var entry in ChangeTracker.Entries<Booking>().Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+        {
+            var booking = entry.Entity;
+            booking.BlockedFrom = booking.StartAt.AddMinutes(-booking.BufferBeforeMinutes);
+            booking.BlockedUntil = booking.EndAt.AddMinutes(booking.BufferAfterMinutes);
+        }
     }
 
     private void StampTenant()

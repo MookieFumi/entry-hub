@@ -33,6 +33,28 @@ public sealed class Booking : ITenantOwned
     public int Attendees { get; init; }
 
     /// <summary>
+    /// Buffer of the room before the booking, copied when the booking is made or moved so that changing the room
+    /// later does not rewrite bookings that already exist.
+    /// </summary>
+    public int BufferBeforeMinutes { get; set; }
+
+    /// <summary>
+    /// Buffer of the room after the booking, copied like <see cref="BufferBeforeMinutes"/>.
+    /// </summary>
+    public int BufferAfterMinutes { get; set; }
+
+    /// <summary>
+    /// <see cref="StartAt"/> minus the buffer before; the database compares these two instants, not the visible times,
+    /// so a room is never booked inside the buffer of another booking. Set when the booking is saved.
+    /// </summary>
+    public DateTimeOffset BlockedFrom { get; set; }
+
+    /// <summary>
+    /// <see cref="EndAt"/> plus the buffer after. Set when the booking is saved.
+    /// </summary>
+    public DateTimeOffset BlockedUntil { get; set; }
+
+    /// <summary>
     /// When the booking was last moved to another time or room; <see langword="null"/> if it never was.
     /// </summary>
     public DateTimeOffset? RescheduledAt { get; set; }

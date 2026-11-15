@@ -22,7 +22,8 @@ internal sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.HasOne<Tenant>().WithMany().HasForeignKey(booking => booking.TenantId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(booking => new { booking.TenantId, booking.OrganizerId, booking.Status, booking.EndAt });
 
-        // The rule that two confirmed bookings of one room cannot overlap is an exclusion constraint that EF Core
-        // cannot model. It is created with SQL in the AddBookings migration (see that file).
+        // The rule that two confirmed bookings of one room cannot overlap, buffers included, is an exclusion constraint
+        // on BlockedFrom/BlockedUntil that EF Core cannot model. It is created with SQL in the AddRoomBuffers migration
+        // (it began as one on StartAt/EndAt in AddBookings).
     }
 }

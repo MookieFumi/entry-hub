@@ -51,6 +51,8 @@ public sealed class CreateRoomHandler(EntryHubDbContext db, FeatureResolver feat
             Name = name,
             Floor = request.Floor,
             Capacity = request.Capacity,
+            BufferBeforeMinutes = request.BufferBeforeMinutes,
+            BufferAfterMinutes = request.BufferAfterMinutes,
             Features = resolved ?? [],
             CreatedAt = clock.GetUtcNow(),
         };
