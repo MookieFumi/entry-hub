@@ -136,8 +136,17 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             // Two requests with the same key raced: one of them wrote the key first. Forget what this one tried
             // to write and answer with what the winner created (or, if the key is not there, with the conflict).
             db.ChangeTracker.Clear();
-            return await ReplayAsync(caller, idempotencyKey, requestHash!, cancellationToken)
-                ?? new CreateBookingResult.Overlaps();
+            var replay = await ReplayAsync(caller, idempotencyKey, requestHash!, cancellationToken);
+
+            // A deadlock victim can ask before the winner has committed, so its key is not there yet: the winner is
+            // about to commit, which makes waiting for it better than answering with a conflict.
+            for (var attempt = 0; replay is null && IsDeadlock(exception) && attempt < DeadlockReplayAttempts; attempt++)
+            {
+                await Task.Delay(DeadlockReplayDelay, cancellationToken);
+                replay = await ReplayAsync(caller, idempotencyKey, requestHash!, cancellationToken);
+            }
+
+            return replay ?? new CreateBookingResult.Overlaps();
         }
         catch (Exception exception) when (LostToAnotherBooking(exception))
         {
@@ -190,6 +199,23 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             request.OnBehalfOf?.Trim());
 
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+    }
+
+    private const int DeadlockReplayAttempts = 30;
+
+    private static readonly TimeSpan DeadlockReplayDelay = TimeSpan.FromMilliseconds(100);
+
+    private static bool IsDeadlock(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException { SqlState: PostgresErrorCodes.DeadlockDetected })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsDuplicateKey(Exception exception)
