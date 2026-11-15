@@ -2033,6 +2033,7 @@
           "Bookings"
         ],
         "summary": "Cancels a booking before it starts.",
+        "description": "With scope=series (the value is not case-sensitive), the booking and all the later occurrences of its series are cancelled, the ones that the cancellation notice no longer allows are kept, and the response (200) lists both. Without it, or with scope=occurrence, only this booking is cancelled (204).",
         "operationId": "CancelBooking",
         "parameters": [
           {
@@ -2042,6 +2043,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -2059,8 +2067,28 @@
           "204": {
             "description": "No Content"
           },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelSeriesResponse"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "Forbidden"
@@ -2760,6 +2788,31 @@
           "Pending"
         ]
       },
+      "CancelSeriesResponse": {
+        "required": [
+          "cancelled",
+          "kept"
+        ],
+        "type": "object",
+        "properties": {
+          "cancelled": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of the bookings that were cancelled (already cancelled ones are not listed)."
+          },
+          "kept": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeptOccurrence"
+            },
+            "description": "Occurrences that stay booked, each with the rule that kept it (for example, the cancellation notice)."
+          }
+        },
+        "description": "The result of cancelling a series from one occurrence on."
+      },
       "CreateBlockRequest": {
         "required": [
           "startAt",
@@ -3244,6 +3297,30 @@
                 "type": "string"
               }
             }
+          }
+        }
+      },
+      "KeptOccurrence": {
+        "required": [
+          "bookingId",
+          "startAt",
+          "violation"
+        ],
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": "string",
+            "description": "The booking that was not cancelled.",
+            "format": "uuid"
+          },
+          "startAt": {
+            "type": "string",
+            "description": "When it starts.",
+            "format": "date-time"
+          },
+          "violation": {
+            "description": "Why it was kept.",
+            "$ref": "#/components/schemas/RuleViolation"
           }
         }
       },
