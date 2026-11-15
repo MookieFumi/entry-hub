@@ -18,6 +18,12 @@ public sealed class Booking : ITenantOwned
     /// </summary>
     public required string OrganizerId { get; init; }
 
+    /// <summary>
+    /// The <c>sub</c> claim of who made the booking when it was not the organizer (Facilities booking on behalf of
+    /// someone); <see langword="null"/> when the organizer booked for themselves.
+    /// </summary>
+    public string? CreatedBy { get; init; }
+
     public required string Title { get; init; }
 
     public DateTimeOffset StartAt { get; set; }

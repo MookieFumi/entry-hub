@@ -20,6 +20,11 @@ public abstract record CreateBookingResult
     public sealed record Overlaps : CreateBookingResult;
 
     /// <summary>
+    /// Only Facilities can book on behalf of someone else.
+    /// </summary>
+    public sealed record Forbidden : CreateBookingResult;
+
+    /// <summary>
     /// The <c>Idempotency-Key</c> was already used with a different request.
     /// </summary>
     public sealed record KeyReused : CreateBookingResult;

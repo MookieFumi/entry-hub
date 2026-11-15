@@ -25,6 +25,15 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         string? idempotencyKey,
         CancellationToken cancellationToken)
     {
+        var onBehalfOf = string.IsNullOrWhiteSpace(request.OnBehalfOf) ? null : request.OnBehalfOf.Trim();
+
+        if (onBehalfOf is not null && !caller.IsFacilities)
+        {
+            return new CreateBookingResult.Forbidden();
+        }
+
+        // Who the booking belongs to: it counts for the organizer's rules, reminders and permissions.
+        var organizer = onBehalfOf ?? caller.Id;
         string? requestHash = null;
 
         if (idempotencyKey is not null)
@@ -91,7 +100,8 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         {
             Id = Guid.CreateVersion7(),
             RoomId = room.Id,
-            OrganizerId = caller.Id,
+            OrganizerId = organizer,
+            CreatedBy = organizer == caller.Id ? null : caller.Id,
             Title = request.Title.Trim(),
             StartAt = request.StartAt.ToUniversalTime(),
             EndAt = request.EndAt.ToUniversalTime(),
@@ -173,7 +183,8 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
             request.Title.Trim(),
             request.StartAt.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             request.EndAt.ToUniversalTime().ToString("O", System.Globalization.CultureInfo.InvariantCulture),
-            request.Attendees);
+            request.Attendees,
+            request.OnBehalfOf?.Trim());
 
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }

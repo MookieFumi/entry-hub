@@ -11,16 +11,17 @@ public static class CreateBookingEndpoint
 {
     public static void Map(RouteGroupBuilder group) =>
         group.MapPost("/", HandleAsync).WithName("CreateBooking")
-            .WithSummary("Books a room, enforcing the booking rules.")
+            .WithSummary("Books a room, enforcing the booking rules. Facilities can book for another user with onBehalfOf.")
             .WithDescription("Send an optional Idempotency-Key header to retry safely: the same key with the same body returns the "
                 + "original booking (header Idempotent-Replayed: true) instead of creating another; the same key with a different "
                 + "body returns 422. Keys are private to each user and are remembered for 24 hours.")
+            .Produces(StatusCodes.Status403Forbidden)
             .ProducesValidationProblem()
             .Produces<RulesBrokenProblem>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
-    private static async Task<Results<Created<BookingResponse>, ProblemHttpResult>> HandleAsync(
+    private static async Task<Results<Created<BookingResponse>, ForbidHttpResult, ProblemHttpResult>> HandleAsync(
         CreateBookingRequest request,
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         HttpContext http,
@@ -33,6 +34,7 @@ public static class CreateBookingEndpoint
         return result switch
         {
             CreateBookingResult.Created created => Created(http, created),
+            CreateBookingResult.Forbidden => TypedResults.Forbid(),
             CreateBookingResult.KeyReused => BookingProblems.IdempotencyKeyReused(),
             CreateBookingResult.KeyInvalid => BookingProblems.IdempotencyKeyInvalid(),
             CreateBookingResult.RulesBroken broken => BookingProblems.RulesBroken(broken.Violations),

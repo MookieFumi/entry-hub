@@ -2,6 +2,9 @@
 
 ## v1.1.0 (in progress)
 
+- **Book on behalf of someone else.** Facilities can pass `onBehalfOf` (the user's id) in `POST /bookings`; anyone else
+  gets 403. The booking belongs to that user (it shows in their bookings and they can cancel or move it) and the new
+  `createdBy` field of the booking says who made it. The active-bookings limit does not apply, as for any Facilities booking.
 - **Maintenance blocks.** Facilities block a room for a time range (`POST /rooms/{id}/blocks`, also `GET` and `DELETE`).
   Bookings and reschedules that overlap a block get a 422 with the code `RoomBlocked`, and the availability search
   skips the room. Creating a block over confirmed bookings returns 409 with their ids in `bookingIds`.
