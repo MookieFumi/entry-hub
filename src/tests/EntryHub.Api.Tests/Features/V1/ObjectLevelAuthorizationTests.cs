@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Bookings;
 using EntryHub.Api.Features.V1.Bookings.CreateBooking;
+using EntryHub.Api.Features.V1.Bookings.RescheduleBooking;
 using EntryHub.Api.Features.V1.Rooms;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Security;
@@ -27,10 +28,11 @@ public class ObjectLevelAuthorizationTests
     /// <summary>
     /// Every endpoint that receives the id of something private to one person, and how to call it.
     /// </summary>
-    private static readonly Dictionary<string, (HttpMethod Method, string Path)> PrivateResourceEndpoints = new()
+    private static readonly Dictionary<string, (HttpMethod Method, string Path, object? Body)> PrivateResourceEndpoints = new()
     {
-        ["GetBooking"] = (HttpMethod.Get, "/api/v1/bookings/{id}"),
-        ["CancelBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/cancel"),
+        ["GetBooking"] = (HttpMethod.Get, "/api/v1/bookings/{id}", null),
+        ["CancelBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/cancel", null),
+        ["RescheduleBooking"] = (HttpMethod.Post, "/api/v1/bookings/{id}/reschedule", new RescheduleBookingRequest(Tuesday.AddHours(1), Tuesday.AddHours(2))),
     };
 
     /// <summary>
@@ -66,14 +68,17 @@ public class ObjectLevelAuthorizationTests
         using var ana = api.ClientFor($"ana-{Guid.NewGuid():N}", Roles.Employee);
         using var bea = api.ClientFor($"bea-{Guid.NewGuid():N}", Roles.Employee);
         var booking = await NewBookingAsync(api, ana);
-        var (method, path) = PrivateResourceEndpoints[endpointName];
+        var (method, path, body) = PrivateResourceEndpoints[endpointName];
+        using var attack = new HttpRequestMessage(method, path.Replace("{id}", booking.Id.ToString(), StringComparison.Ordinal));
+        attack.Content = body is null ? null : JsonContent.Create(body);
 
-        var response = await bea.SendAsync(new HttpRequestMessage(method, path.Replace("{id}", booking.Id.ToString(), StringComparison.Ordinal)));
+        var response = await bea.SendAsync(attack);
 
         Assert.Contains(response.StatusCode, new[] { HttpStatusCode.Forbidden, HttpStatusCode.NotFound });
 
         var afterwards = await ana.GetFromJsonAsync<BookingResponse>($"/api/v1/bookings/{booking.Id}", TestJson.Options);
         Assert.Equal(BookingStatus.Confirmed, afterwards!.Status);
+        Assert.Equal(booking.StartAt, afterwards.StartAt);
     }
 
     private static async Task<BookingResponse> NewBookingAsync(TestApi api, HttpClient organizer)

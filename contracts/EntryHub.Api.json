@@ -1515,6 +1515,99 @@
         ]
       }
     },
+    "/api/v1/bookings/{id}/reschedule": {
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Moves a booking to another time or room, keeping its id. Organizer or Facilities.",
+        "operationId": "RescheduleBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleBookingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesBrokenProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -1633,6 +1726,13 @@
             "format": "date-time"
           },
           "cancelledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "rescheduledAt": {
             "type": [
               "null",
               "string"
@@ -2082,6 +2182,34 @@
             ]
           }
         }
+      },
+      "RescheduleBookingRequest": {
+        "required": [
+          "startAt",
+          "endAt"
+        ],
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "description": "New start.",
+            "format": "date-time"
+          },
+          "endAt": {
+            "type": "string",
+            "description": "New end.",
+            "format": "date-time"
+          },
+          "roomId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New room; the current one when left out.",
+            "format": "uuid"
+          }
+        },
+        "description": "Moves a booking to another time and, optionally, another room. The booking keeps its id, title, organizer and\nattendees. The new time must pass the same rules as a new booking."
       },
       "RoomOccupancy": {
         "required": [
