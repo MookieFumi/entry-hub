@@ -253,6 +253,42 @@ namespace EntryHub.Api.Data.Migrations
                     b.ToTable("rooms", (string)null);
                 });
 
+            modelBuilder.Entity("EntryHub.Api.Domain.Rooms.RoomBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("EndAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("RoomId", "StartAt", "EndAt");
+
+                    b.ToTable("room_blocks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_room_blocks_end_after_start", "\"EndAt\" > \"StartAt\"");
+                        });
+                });
+
             modelBuilder.Entity("EntryHub.Api.Domain.Sites.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -422,6 +458,21 @@ namespace EntryHub.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("EntryHub.Api.Domain.Rooms.RoomBlock", b =>
+                {
+                    b.HasOne("EntryHub.Api.Domain.Rooms.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EntryHub.Api.Domain.Tenants.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EntryHub.Api.Domain.Sites.Site", b =>

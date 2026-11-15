@@ -1,4 +1,5 @@
 using EntryHub.Api.Features.V1.Features;
+using EntryHub.Api.Features.V1.Rooms.Blocks;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoomSchedule;
@@ -31,5 +32,6 @@ public static class RoomsEndpoints
         GetRoomScheduleEndpoint.Map(rooms);
         ListRoomsEndpoint.Map(rooms);
         StreamRoomOccupancyEndpoint.Map(rooms);
+        BlocksEndpoints.Map(rooms);
     }
 }

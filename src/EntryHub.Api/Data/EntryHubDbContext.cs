@@ -32,6 +32,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
 
     public DbSet<Room> Rooms => Set<Room>();
 
+    public DbSet<RoomBlock> RoomBlocks => Set<RoomBlock>();
+
     public DbSet<Booking> Bookings => Set<Booking>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
@@ -54,6 +56,7 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
         modelBuilder.Entity<Feature>().HasQueryFilter(feature => feature.TenantId == TenantId);
         modelBuilder.Entity<RoomFeature>().HasQueryFilter(link => link.TenantId == TenantId);
         modelBuilder.Entity<Room>().HasQueryFilter(room => room.TenantId == TenantId);
+        modelBuilder.Entity<RoomBlock>().HasQueryFilter(block => block.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
         modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }

@@ -24,7 +24,8 @@ public sealed class SearchAvailabilityHandler(EntryHubDbContext db)
                 booking.RoomId == room.Id
                 && booking.Status == BookingStatus.Confirmed
                 && booking.StartAt < to
-                && booking.EndAt > from));
+                && booking.EndAt > from))
+            .Where(room => !db.RoomBlocks.Any(block => block.RoomId == room.Id && block.StartAt < to && block.EndAt > from));
 
         if (query.Floor is { } floor)
         {

@@ -2,6 +2,9 @@
 
 ## v1.1.0 (in progress)
 
+- **Maintenance blocks.** Facilities block a room for a time range (`POST /rooms/{id}/blocks`, also `GET` and `DELETE`).
+  Bookings and reschedules that overlap a block get a 422 with the code `RoomBlocked`, and the availability search
+  skips the room. Creating a block over confirmed bookings returns 409 with their ids in `bookingIds`.
 - **Holidays per site.** Facilities close a site on a date with `POST /sites/{id}/holidays` (also `GET` and
   `DELETE`). Bookings and reschedules on that day get a 422 with the code `SiteClosed`, and the availability search
   skips the rooms of a closed site. Existing bookings are not touched.
