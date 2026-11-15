@@ -12,7 +12,7 @@ public static class DemoExtensions
     public static IServiceCollection AddEntryHubDemo(this IServiceCollection services)
     {
         services.AddOptions<DemoSettings>().BindConfiguration("Demo");
-        services.AddSingleton(provider =>
+        services.AddScoped(provider =>
             new DemoSeeder(provider.GetRequiredService<DbContextOptions<EntryHubDbContext>>(), provider.GetRequiredService<TimeProvider>()));
         services.AddHostedService<DemoSeedingService>();
 

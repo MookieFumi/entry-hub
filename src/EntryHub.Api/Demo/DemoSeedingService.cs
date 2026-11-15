@@ -7,7 +7,7 @@ namespace EntryHub.Api.Demo;
 /// the API: the demo data is a convenience, not something the API needs to serve requests.
 /// </summary>
 public sealed partial class DemoSeedingService(
-    DemoSeeder seeder,
+    IServiceScopeFactory scopes,
     IOptions<DemoSettings> settings,
     ILogger<DemoSeedingService> logger) : BackgroundService
 {
@@ -20,6 +20,8 @@ public sealed partial class DemoSeedingService(
 
         try
         {
+            await using var scope = scopes.CreateAsyncScope();
+            var seeder = scope.ServiceProvider.GetRequiredService<DemoSeeder>();
             await seeder.SeedAsync(stoppingToken);
             LogSeeded(logger);
         }
