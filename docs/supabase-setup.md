@@ -119,6 +119,17 @@ role of the caller come from two claims that a hook adds to every token.
    revoke execute on function private.custom_access_token_hook from authenticated, anon, public;
    ```
 
+   > **The editor warning.** The SQL Editor warns that the query "creates a table without enabling Row Level
+   > Security". Choose **Run without RLS**. It is fine here: the `private` schema is not exposed by the Data API and
+   > only `supabase_auth_admin` has a grant on the table. If you enable RLS anyway
+   > (`alter table private.user_tenants enable row level security;`), also create this policy, or the hook stops
+   > seeing rows and the tokens come out **without `tenant_id`** and `user_role`:
+   >
+   > ```sql
+   > create policy "auth hook read" on private.user_tenants
+   >   for select to supabase_auth_admin using (true);
+   > ```
+
 4. *Authentication → Hooks* → *Custom Access Token* → Postgres function → `private.custom_access_token_hook`.
 
 **Why `user_role` and not `role`:** in Supabase `role` is `authenticated`, its own PostgreSQL role. The API reads the
