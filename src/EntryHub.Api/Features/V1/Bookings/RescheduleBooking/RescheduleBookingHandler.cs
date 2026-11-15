@@ -4,6 +4,7 @@ using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
 using EntryHub.Api.Features.V1.Rules;
+using EntryHub.Api.Features.V1.Sites;
 using EntryHub.Api.Security;
 
 using Microsoft.AspNetCore.Authorization;
@@ -57,7 +58,12 @@ public sealed class RescheduleBookingHandler(
         }
 
         // The same rules as a new booking. The limit of active bookings is not asked: moving one does not add one.
-        var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, request.StartAt, request.EndAt, booking.Attendees, room.Capacity, now);
+        var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, request.StartAt, request.EndAt, booking.Attendees, room.Capacity, now).ToList();
+
+        if (await SiteClosures.CheckAsync(db, room.SiteId, room.Site.Hours, request.StartAt, cancellationToken) is { } closed)
+        {
+            violations.Add(closed);
+        }
 
         if (violations.Count > 0)
         {

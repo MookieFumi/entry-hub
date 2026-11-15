@@ -5,6 +5,7 @@ using EntryHub.Api.Data;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Features.V1.Common;
 using EntryHub.Api.Features.V1.Rules;
+using EntryHub.Api.Features.V1.Sites;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -53,6 +54,11 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
         var now = clock.GetUtcNow();
         var rules = await rulesReader.GetAsync(cancellationToken);
         var violations = policy.EvaluateNewBooking(rules, room.Site!.Hours, request.StartAt, request.EndAt, request.Attendees, room.Capacity, now).ToList();
+
+        if (await SiteClosures.CheckAsync(db, room.SiteId, room.Site.Hours, request.StartAt, cancellationToken) is { } closed)
+        {
+            violations.Add(closed);
+        }
 
         if (!caller.IsFacilities)
         {
