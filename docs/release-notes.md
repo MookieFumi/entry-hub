@@ -5,6 +5,10 @@
 - **Tenant data export.** Facilities download everything the tenant has stored (sites, holidays, equipment catalog,
   rooms, blocks, rules, bookings and the audit trail) as one JSON document with `GET /tenant/export`. Each export is
   recorded in the audit trail as `Exported`.
+- **Tenant data deletion.** Facilities erase everything the tenant has stored with `DELETE /tenant/data` and a body
+  `{ "confirmation": "DELETE <name of the tenant>" }` (bookings, rooms, sites, holidays, catalog, blocks, rules and the
+  audit trail), all in one transaction. The tenant itself stays, together with one audit entry that says who deleted
+  the data. Export first: it cannot be undone.
 - **Room buffers.** A room can keep minutes free before and after each booking (`bufferBeforeMinutes` and
   `bufferAfterMinutes`, 0 to 240, set when the room is created or edited). A booking that would start or end inside the
   buffer of a neighbour gets the same 409 as an overlap, and the availability search leaves such rooms out. Each booking

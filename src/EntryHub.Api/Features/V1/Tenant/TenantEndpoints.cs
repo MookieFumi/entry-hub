@@ -1,3 +1,4 @@
+using EntryHub.Api.Features.V1.Tenant.Delete;
 using EntryHub.Api.Features.V1.Tenant.Export;
 using EntryHub.Api.Security;
 
@@ -10,5 +11,6 @@ public static class TenantEndpoints
         var tenant = v1.MapGroup("/tenant").WithTags("Tenant").RequireAuthorization(Policies.Facilities);
 
         ExportTenantEndpoint.Map(tenant);
+        DeleteTenantDataEndpoint.Map(tenant);
     }
 }
