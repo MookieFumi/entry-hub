@@ -2172,6 +2172,52 @@
         ]
       }
     },
+    "/api/v1/tenant/export": {
+      "get": {
+        "tags": [
+          "Tenant"
+        ],
+        "summary": "Downloads everything the tenant has stored as one JSON document: sites, holidays, catalog, rooms, blocks, rules, bookings and the audit trail. The export is itself recorded in the audit trail. Facilities only.",
+        "operationId": "ExportTenantData",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantExportResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -3455,6 +3501,175 @@
           }
         }
       },
+      "TenantExportResponse": {
+        "required": [
+          "tenantId",
+          "tenantName",
+          "exportedAt",
+          "rules",
+          "sites",
+          "holidays",
+          "features",
+          "rooms",
+          "blocks",
+          "bookings",
+          "audit"
+        ],
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "The tenant.",
+            "format": "uuid"
+          },
+          "tenantName": {
+            "type": "string",
+            "description": "Name of the tenant."
+          },
+          "exportedAt": {
+            "type": "string",
+            "description": "When the document was made.",
+            "format": "date-time"
+          },
+          "rules": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The rules the tenant stored; `null` when it uses the defaults of the platform.",
+                "$ref": "#/components/schemas/TenantRulesExport"
+              }
+            ]
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteResponse"
+            },
+            "description": "All sites, active or not."
+          },
+          "holidays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteHolidayResponse"
+            },
+            "description": "All closed days of the sites."
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeatureResponse"
+            },
+            "description": "The whole catalog, active or not."
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoomResponse"
+            },
+            "description": "All rooms, active or not, with what they have."
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoomBlockResponse"
+            },
+            "description": "All maintenance blocks."
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingResponse"
+            },
+            "description": "All bookings, whatever their status."
+          },
+          "audit": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditResponse"
+            },
+            "description": "The audit trail, oldest first."
+          }
+        },
+        "description": "Everything stored for the tenant of the token, in the same shapes the API returns elsewhere."
+      },
+      "TenantRulesExport": {
+        "required": [
+          "minDurationMinutes",
+          "maxDurationMinutes",
+          "slotMinutes",
+          "minLeadTimeMinutes",
+          "maxAdvanceDays",
+          "cancellationNoticeMinutes",
+          "maxActiveBookingsPerEmployee",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "minDurationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxDurationMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "slotMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minLeadTimeMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxAdvanceDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cancellationNoticeMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxActiveBookingsPerEmployee": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "The booking rules the tenant stored."
+      },
       "UpdateFeatureRequest": {
         "required": [
           "name",
@@ -3788,6 +4003,9 @@
     },
     {
       "name": "Bookings"
+    },
+    {
+      "name": "Tenant"
     },
     {
       "name": "Probes",
