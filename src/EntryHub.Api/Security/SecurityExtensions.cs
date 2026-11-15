@@ -58,6 +58,7 @@ public static class SecurityExtensions
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantContext, HttpTenantContext>();
+        services.AddScoped<ICurrentActor, HttpCurrentActor>();
 
         // Object-level checks: the handlers call IAuthorizationService with the loaded booking.
         services.AddSingleton<IAuthorizationHandler, BookingAuthorizationHandler>();

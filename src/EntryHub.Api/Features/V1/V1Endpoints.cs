@@ -1,3 +1,4 @@
+using EntryHub.Api.Features.V1.Audit;
 using EntryHub.Api.Features.V1.Bookings;
 using EntryHub.Api.Features.V1.CurrentUser;
 using EntryHub.Api.Features.V1.Features;
@@ -33,6 +34,7 @@ public static class V1Endpoints
         v1.MapFeaturesEndpoints();
         v1.MapRoomsEndpoints();
         v1.MapBookingsEndpoints();
+        v1.MapAuditEndpoints();
 
         return app;
     }

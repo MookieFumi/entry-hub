@@ -1,3 +1,4 @@
+using EntryHub.Api.Domain.Audit;
 using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Rooms;
@@ -12,7 +13,11 @@ namespace EntryHub.Api.Data;
 /// <summary>
 /// Database context of the application. Entity sets are added together with the feature that needs them.
 /// </summary>
-public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> options, ITenantContext? tenant = null) : DbContext(options)
+public sealed class EntryHubDbContext(
+    DbContextOptions<EntryHubDbContext> options,
+    ITenantContext? tenant = null,
+    ICurrentActor? actor = null,
+    TimeProvider? clock = null) : DbContext(options)
 {
     /// <summary>
     /// The tenant every query is filtered by. <see cref="Guid.Empty"/> when there is none, and no row has it,
@@ -33,6 +38,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
     public DbSet<Room> Rooms => Set<Room>();
 
     public DbSet<RoomBlock> RoomBlocks => Set<RoomBlock>();
+
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
     public DbSet<Booking> Bookings => Set<Booking>();
 
@@ -57,20 +64,38 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
         modelBuilder.Entity<RoomFeature>().HasQueryFilter(link => link.TenantId == TenantId);
         modelBuilder.Entity<Room>().HasQueryFilter(room => room.TenantId == TenantId);
         modelBuilder.Entity<RoomBlock>().HasQueryFilter(block => block.TenantId == TenantId);
+        modelBuilder.Entity<AuditEntry>().HasQueryFilter(entry => entry.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
         modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        RecordAudit();
         StampTenant();
         return base.SaveChangesAsync(cancellationToken);
     }
 
     public override int SaveChanges()
     {
+        RecordAudit();
         StampTenant();
         return base.SaveChanges();
+    }
+
+    /// <summary>
+    /// Adds an audit entry for every change to something the trail covers, saved in the same transaction. Nothing is
+    /// written when there is no actor, which is the case outside a request.
+    /// </summary>
+    private void RecordAudit()
+    {
+        if (actor?.ActorId is not { Length: > 0 } actorId || TenantId == Guid.Empty)
+        {
+            return;
+        }
+
+        var entries = AuditRecorder.Record([.. ChangeTracker.Entries()], actorId, TenantId, (clock ?? TimeProvider.System).GetUtcNow());
+        AuditEntries.AddRange(entries);
     }
 
     private void StampTenant()
