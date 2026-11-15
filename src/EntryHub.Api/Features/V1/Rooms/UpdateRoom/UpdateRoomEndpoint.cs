@@ -29,6 +29,10 @@ public static class UpdateRoomEndpoint
                 title: "Room name already in use",
                 detail: $"A room named '{request.Name?.Trim()}' already exists.",
                 statusCode: StatusCodes.Status409Conflict),
+            UpdateRoomOutcome.FeatureNotFound => TypedResults.Problem(
+                title: "Catalog entry not available",
+                detail: "A feature does not exist or is deactivated.",
+                statusCode: StatusCodes.Status400BadRequest),
             UpdateRoomOutcome.SiteNotFound => TypedResults.Problem(
                 title: "Site not found",
                 detail: "The site does not exist or is not active.",

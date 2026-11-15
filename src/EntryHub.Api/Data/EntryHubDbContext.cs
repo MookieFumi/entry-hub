@@ -1,4 +1,5 @@
 using EntryHub.Api.Domain.Bookings;
+using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Domain.Tenants;
@@ -25,6 +26,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
 
     public DbSet<TenantRules> TenantRules => Set<TenantRules>();
 
+    public DbSet<Feature> Features => Set<Feature>();
+
     public DbSet<Room> Rooms => Set<Room>();
 
     public DbSet<Booking> Bookings => Set<Booking>();
@@ -43,6 +46,8 @@ public sealed class EntryHubDbContext(DbContextOptions<EntryHubDbContext> option
         // EF Core evaluate it per context instance, not once per model.
         modelBuilder.Entity<Site>().HasQueryFilter(site => site.TenantId == TenantId);
         modelBuilder.Entity<TenantRules>().HasQueryFilter(rules => rules.TenantId == TenantId);
+        modelBuilder.Entity<Feature>().HasQueryFilter(feature => feature.TenantId == TenantId);
+        modelBuilder.Entity<RoomFeature>().HasQueryFilter(link => link.TenantId == TenantId);
         modelBuilder.Entity<Room>().HasQueryFilter(room => room.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
     }

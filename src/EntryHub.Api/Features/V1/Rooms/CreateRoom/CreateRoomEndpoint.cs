@@ -25,6 +25,10 @@ public static class CreateRoomEndpoint
                 title: "Site not found",
                 detail: "The site does not exist, is not active, or the tenant has no site yet.",
                 statusCode: StatusCodes.Status400BadRequest),
+            CreateRoomOutcome.FeatureNotFound => TypedResults.Problem(
+                title: "Catalog entry not available",
+                detail: "A feature does not exist or is deactivated.",
+                statusCode: StatusCodes.Status400BadRequest),
             _ => TypedResults.Problem(
                 title: "Room name already in use",
                 detail: $"A room named '{request.Name.Trim()}' already exists in the site.",

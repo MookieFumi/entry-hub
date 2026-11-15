@@ -1,3 +1,4 @@
+using EntryHub.Api.Features.V1.Features;
 using EntryHub.Api.Features.V1.Rooms.CreateRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoom;
 using EntryHub.Api.Features.V1.Rooms.GetRoomSchedule;
@@ -14,6 +15,7 @@ public static class RoomsEndpoints
     public static IServiceCollection AddRoomsFeature(this IServiceCollection services)
     {
         services.AddOptions<StreamRoomOccupancyOptions>();
+        services.AddScoped<FeatureResolver>();
 
         return services;
     }

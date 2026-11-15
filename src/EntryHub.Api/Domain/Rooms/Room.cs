@@ -1,3 +1,4 @@
+using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Tenancy;
 
@@ -22,7 +23,10 @@ public sealed class Room : ITenantOwned
 
     public int Capacity { get; set; }
 
-    public List<string> Equipment { get; set; } = [];
+    /// <summary>
+    /// What the room has, from the catalog of the tenant.
+    /// </summary>
+    public List<Feature> Features { get; set; } = [];
 
     public bool IsActive { get; set; } = true;
 

@@ -33,6 +33,8 @@ public sealed class ListRoomsHandler(EntryHubDbContext db)
             rooms = rooms.Where(room => room.Capacity >= minCapacity);
         }
 
+        rooms = FeatureFilter.Apply(rooms, query.Features);
+
         var total = await rooms.CountAsync(cancellationToken);
 
         var page = await rooms

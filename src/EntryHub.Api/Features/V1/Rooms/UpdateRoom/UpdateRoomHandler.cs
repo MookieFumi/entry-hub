@@ -1,4 +1,5 @@
 using EntryHub.Api.Data;
+using EntryHub.Api.Features.V1.Features;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +13,10 @@ public enum UpdateRoomOutcome
     NotFound,
     NameInUse,
     SiteNotFound,
+    FeatureNotFound,
 }
 
-public sealed class UpdateRoomHandler(EntryHubDbContext db)
+public sealed class UpdateRoomHandler(EntryHubDbContext db, FeatureResolver features)
 {
     public async Task<(UpdateRoomOutcome Outcome, RoomResponse? Room)> HandleAsync(
         Guid id,
@@ -51,9 +53,16 @@ public sealed class UpdateRoomHandler(EntryHubDbContext db)
         room.Capacity = request.Capacity ?? room.Capacity;
         room.IsActive = request.IsActive ?? room.IsActive;
 
-        if (request.Equipment is not null)
+        var (resolved, unknownFeature) = await features.ResolveAsync(request.FeatureIds, request.Equipment, cancellationToken);
+
+        if (unknownFeature is not null)
         {
-            room.Equipment = request.Equipment.Select(item => item.Trim()).Where(item => item.Length > 0).Distinct().ToList();
+            return (UpdateRoomOutcome.FeatureNotFound, null);
+        }
+
+        if (resolved is not null)
+        {
+            room.Features = resolved;
         }
 
         try
