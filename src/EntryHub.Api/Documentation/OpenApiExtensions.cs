@@ -69,6 +69,7 @@ public static class OpenApiExtensions
                     schema.Extensions ??= new Dictionary<string, IOpenApiExtension>();
                     schema.Extensions[ExtensibleEnum] = new JsonNodeExtension(new JsonArray([.. values.Select(value => (JsonNode?)JsonValue.Create(value.GetValue<string>()))]));
                     schema.Enum = null;
+                    schema.Type = JsonSchemaType.String;
                 }
 
                 return Task.CompletedTask;

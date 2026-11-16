@@ -3091,6 +3091,7 @@
         }
       },
       "BookingStatus": {
+        "type": "string",
         "x-extensible-enum": [
           "Confirmed",
           "Cancelled",
