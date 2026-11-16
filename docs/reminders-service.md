@@ -75,7 +75,7 @@ Nothing in the repository runs it yet. These steps add it. Create the secret fir
 3. *Code → Add file → Create new file*. Name it `.github/workflows/reminders.yml` and paste:
 
    ```yaml
-   name: reminders
+   name: Reminders
 
    # One pass of the reminders service: reminders, webhook deliveries and auto-release.
    on:
@@ -109,8 +109,8 @@ Nothing in the repository runs it yet. These steps add it. Create the secret fir
 
 4. Commit to `main` (through a pull request if the branch is protected).
 5. *Settings → Secrets and variables → Actions → Variables → New repository variable*: `REMINDERS_ENABLED` with value
-   `true`. Until then the job does nothing, like the `deploy` workflow without `AZURE_WEBAPP_NAME`.
-6. Try it: *Actions → reminders → Run workflow*. A green run, whose log shows `Reminders: ... sent` when a booking was
+   `true`. Until then the job does nothing, like the `Deploy` workflow without `AZURE_WEBAPP_NAME`.
+6. Try it: *Actions → Reminders → Run workflow*. A green run, whose log shows `Reminders: ... sent` when a booking was
    due, means it works.
 
 The log of the free runner lives 90 days. The job does not need any other secret. Email stays off (no SMTP settings).
