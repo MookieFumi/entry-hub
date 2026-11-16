@@ -16,6 +16,8 @@ public class ReminderStoreTests
 {
     private static readonly TimeSpan LeadTime = TimeSpan.FromMinutes(15);
 
+    private static readonly TimeSpan Retry = TimeSpan.FromMinutes(1);
+
     private static DateTimeOffset At(int year, int minutes) => new DateTimeOffset(year, 3, 10, 9, 0, 0, TimeSpan.Zero).AddMinutes(minutes);
 
     private static async Task<Room> NewRoomAsync()
@@ -36,7 +38,7 @@ public class ReminderStoreTests
         return room;
     }
 
-    private static async Task<Booking> NewBookingAsync(Room room, DateTimeOffset start, BookingStatus status = BookingStatus.Confirmed)
+    private static async Task<Booking> NewBookingAsync(Room room, DateTimeOffset start, BookingStatus status = BookingStatus.Confirmed, string? email = null)
     {
         await using var db = TestDatabase.CreateContext();
         var booking = new Booking
@@ -44,6 +46,7 @@ public class ReminderStoreTests
             Id = Guid.CreateVersion7(),
             RoomId = room.Id,
             OrganizerId = $"person-{Guid.NewGuid():N}",
+            OrganizerEmail = email,
             Title = "Planning",
             StartAt = start,
             EndAt = start.AddHours(1),
@@ -59,15 +62,15 @@ public class ReminderStoreTests
     private static ReminderStore NewStore() => new(NpgsqlDataSource.Create(TestDatabase.ConnectionString));
 
     [Fact]
-    public async Task A_booking_about_to_start_is_returned_once_and_marked()
+    public async Task A_booking_about_to_start_is_returned_once_and_stays_reserved_until_it_is_marked()
     {
         var room = await NewRoomAsync();
         var start = At(2031, 10);
         var booking = await NewBookingAsync(room, start);
         var store = NewStore();
 
-        var first = await store.ClaimDueAsync(At(2031, 0), LeadTime, CancellationToken.None);
-        var second = await store.ClaimDueAsync(At(2031, 1), LeadTime, CancellationToken.None);
+        var first = await store.ClaimDueAsync(At(2031, 0), LeadTime, Retry, CancellationToken.None);
+        var second = await store.ClaimDueAsync(At(2031, 0).AddSeconds(30), LeadTime, Retry, CancellationToken.None);
 
         var reminder = Assert.Single(first);
         Assert.Equal(booking.Id, reminder.BookingId);
@@ -76,8 +79,34 @@ public class ReminderStoreTests
         Assert.Equal(start, reminder.StartAt);
         Assert.Empty(second);
 
+        await using (var before = TestDatabase.CreateContext())
+        {
+            var reserved = await before.Bookings.FindAsync(booking.Id);
+            Assert.Null(reserved?.ReminderSentAt);
+            Assert.Equal(At(2031, 1), reserved?.ReminderLeaseUntil);
+        }
+
+        await store.MarkRemindedAsync(first, At(2031, 2), CancellationToken.None);
+
+        Assert.Empty(await store.ClaimDueAsync(At(2031, 5), LeadTime, Retry, CancellationToken.None));
         await using var db = TestDatabase.CreateContext();
-        Assert.Equal(At(2031, 0), (await db.Bookings.FindAsync(booking.Id))?.ReminderSentAt);
+        Assert.Equal(At(2031, 2), (await db.Bookings.FindAsync(booking.Id))?.ReminderSentAt);
+    }
+
+    [Fact]
+    public async Task A_reminder_that_was_not_marked_comes_back_when_the_reservation_lapses()
+    {
+        var room = await NewRoomAsync();
+        var booking = await NewBookingAsync(room, At(2035, 10), email: "ana@example.com");
+        var store = NewStore();
+
+        var first = Assert.Single(await store.ClaimDueAsync(At(2035, 0), LeadTime, Retry, CancellationToken.None));
+        Assert.Equal("ana@example.com", first.Email);
+        Assert.Empty(await store.ClaimDueAsync(At(2035, 0).AddSeconds(59), LeadTime, Retry, CancellationToken.None));
+
+        var again = await store.ClaimDueAsync(At(2035, 1), LeadTime, Retry, CancellationToken.None);
+
+        Assert.Equal(booking.Id, Assert.Single(again).BookingId);
     }
 
     [Fact]
@@ -87,9 +116,9 @@ public class ReminderStoreTests
         var booking = await NewBookingAsync(room, At(2032, 60));
         var store = NewStore();
 
-        Assert.Empty(await store.ClaimDueAsync(At(2032, 0), LeadTime, CancellationToken.None));
+        Assert.Empty(await store.ClaimDueAsync(At(2032, 0), LeadTime, Retry, CancellationToken.None));
 
-        var due = await store.ClaimDueAsync(At(2032, 50), LeadTime, CancellationToken.None);
+        var due = await store.ClaimDueAsync(At(2032, 50), LeadTime, Retry, CancellationToken.None);
         Assert.Equal(booking.Id, Assert.Single(due).BookingId);
     }
 
@@ -101,7 +130,7 @@ public class ReminderStoreTests
         var started = await NewRoomAsync();
         await NewBookingAsync(started, At(2033, -5));
 
-        var due = await NewStore().ClaimDueAsync(At(2033, 0), LeadTime, CancellationToken.None);
+        var due = await NewStore().ClaimDueAsync(At(2033, 0), LeadTime, Retry, CancellationToken.None);
 
         Assert.Empty(due);
     }
@@ -116,7 +145,7 @@ public class ReminderStoreTests
         }
 
         var claims = await Task.WhenAll(Enumerable.Range(0, 5)
-            .Select(_ => NewStore().ClaimDueAsync(At(2034, 0), LeadTime, CancellationToken.None)));
+            .Select(_ => NewStore().ClaimDueAsync(At(2034, 0), LeadTime, Retry, CancellationToken.None)));
 
         var ids = claims.SelectMany(claim => claim).Select(reminder => reminder.BookingId).ToList();
         Assert.Equal(bookings.Count, ids.Count);

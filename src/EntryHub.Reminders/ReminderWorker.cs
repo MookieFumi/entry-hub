@@ -1,14 +1,17 @@
+using EntryHub.Reminders.Notifications;
+
 using Microsoft.Extensions.Options;
 
 namespace EntryHub.Reminders;
 
 /// <summary>
 /// Looks for bookings that are about to start and reminds their organizers, and releases the ones nobody checked in to
-/// when their tenant asked for it. The reminder is a structured log entry,
-/// which the Aspire dashboard shows; sending an email or a push notification would replace the log line.
+/// when their tenant asked for it. How a reminder reaches the organizer is up to the <see cref="INotificationSender"/>:
+/// a log entry by default, an email when the SMTP settings are on.
 /// </summary>
 public sealed partial class ReminderWorker(
     ReminderStore store,
+    INotificationSender sender,
     IOptions<ReminderOptions> options,
     TimeProvider clock,
     ILogger<ReminderWorker> logger) : BackgroundService
@@ -38,9 +41,40 @@ public sealed partial class ReminderWorker(
     /// </summary>
     public async Task RemindAsync(TimeSpan leadTime, CancellationToken cancellationToken)
     {
-        foreach (var reminder in await store.ClaimDueAsync(clock.GetUtcNow(), leadTime, cancellationToken))
+        var due = await store.ClaimDueAsync(clock.GetUtcNow(), leadTime, options.Value.RetryAfter, cancellationToken);
+        var done = new List<DueReminder>();
+        var (sent, withoutRecipient, failed) = (0, 0, 0);
+
+        foreach (var reminder in due)
         {
-            LogReminder(reminder.OrganizerId, reminder.Title, reminder.RoomName, reminder.StartAt);
+            var outcome = await sender.SendReminderAsync(
+                new ReminderMessage(reminder.BookingId, reminder.OrganizerId, reminder.Email, reminder.Title, reminder.RoomName, reminder.StartAt),
+                cancellationToken);
+
+            switch (outcome)
+            {
+                case NotificationOutcome.Sent:
+                    sent++;
+                    done.Add(reminder);
+                    break;
+                case NotificationOutcome.NoRecipient:
+                    withoutRecipient++;
+                    done.Add(reminder);
+                    break;
+                default:
+                    failed++;
+                    break;
+            }
+        }
+
+        if (done.Count > 0)
+        {
+            await store.MarkRemindedAsync(done, clock.GetUtcNow(), cancellationToken);
+        }
+
+        if (due.Count > 0)
+        {
+            LogRound(sent, withoutRecipient, failed);
         }
 
         foreach (var bookingId in await store.ReleaseUncheckedAsync(clock.GetUtcNow(), cancellationToken))
@@ -61,8 +95,8 @@ public sealed partial class ReminderWorker(
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Reminder for {OrganizerId}: \"{Title}\" in {RoomName} starts at {StartAt:u}")]
-    private partial void LogReminder(string organizerId, string title, string roomName, DateTimeOffset startAt);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reminders: {Sent} sent, {WithoutRecipient} without an address, {Failed} to try again")]
+    private partial void LogRound(int sent, int withoutRecipient, int failed);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Booking {BookingId} released: nobody checked in")]
     private partial void LogReleased(Guid bookingId);

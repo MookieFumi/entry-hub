@@ -84,8 +84,8 @@ public class SystemTests(EntryHubSystem system)
             await db.SaveChangesAsync();
         }
 
-        // The service marks the booking in the same statement that selects it, right before it logs the reminder,
-        // so the mark is what proves a round found it. It polls every 30 seconds.
+        // The service marks the booking once it has sent (logged) the reminder, so the mark is what proves a round
+        // found it. It polls every 30 seconds.
         using var timeout = new CancellationTokenSource(ReminderTimeout);
         DateTimeOffset? reminderSentAt = null;
         while (reminderSentAt is null && !timeout.IsCancellationRequested)

@@ -24,6 +24,12 @@ public sealed class Booking : ITenantOwned
     /// </summary>
     public string? CreatedBy { get; init; }
 
+    /// <summary>
+    /// Where to send the reminder, taken from the <c>email</c> claim of the token when the organizer booked for
+    /// themselves; <see langword="null"/> when the token had none or someone else booked on their behalf.
+    /// </summary>
+    public string? OrganizerEmail { get; init; }
+
     public required string Title { get; init; }
 
     public DateTimeOffset StartAt { get; set; }
@@ -96,4 +102,10 @@ public sealed class Booking : ITenantOwned
     /// When the reminders service told the organizer that the booking is about to start; it is set once.
     /// </summary>
     public DateTimeOffset? ReminderSentAt { get; set; }
+
+    /// <summary>
+    /// While a copy of the reminders service is sending the reminder, until when it has the booking reserved. If the
+    /// send fails the reservation lapses and the next round tries again.
+    /// </summary>
+    public DateTimeOffset? ReminderLeaseUntil { get; set; }
 }

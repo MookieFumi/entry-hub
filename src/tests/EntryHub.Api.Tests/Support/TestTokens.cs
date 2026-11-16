@@ -34,6 +34,16 @@ internal static class TestTokens
         Sign(Describe(subject, roles, tenantId));
 
     /// <summary>
+    /// A token that also carries the <c>email</c> claim.
+    /// </summary>
+    public static string CreateWithEmail(Guid tenantId, string subject, string email, params string[] roles)
+    {
+        var descriptor = Describe(subject, roles, tenantId);
+        descriptor.Subject.AddClaim(new Claim("email", email));
+        return Sign(descriptor);
+    }
+
+    /// <summary>
     /// A descriptor for a valid token, valid for one hour, that a test can change before signing it.
     /// </summary>
     public static SecurityTokenDescriptor Describe(string subject, params string[] roles) =>
