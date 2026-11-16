@@ -1,5 +1,5 @@
 # .github/workflows/keep-alive.yml
-name: keep-alive
+name: Keep Alive
 
 # Supabase pauses a free project after a week without activity. This calls the API once a day; GET /api/v1/health
 # also asks PostgreSQL, which counts as activity, and it wakes the App Service of the demo, which sleeps without

@@ -2,7 +2,7 @@
 
 The demo runs on an Azure App Service (free F1 plan) with PostgreSQL and sign-in from Supabase. Pushing a tag such as
 `v1.0.0` builds the API, applies the migrations, deploys it and checks that it answers. This page lists what the
-repository needs so that the `deploy` workflow can do that. The step-by-step setup of the cloud resources is in
+repository needs so that the `Deploy` workflow can do that. The step-by-step setup of the cloud resources is in
 [supabase-setup.md](supabase-setup.md) (database roles, sign-in hook, demo users); here is only what GitHub and Azure
 must agree on.
 
@@ -16,7 +16,7 @@ The reminders service (reminders, webhooks, auto-release) is a separate worker t
 ## How a release goes
 
 1. Create the tag `v1.0.0`: `git tag v1.0.0 && git push origin v1.0.0`, or in GitHub *Releases → Draft a new release →
-   Choose a tag → Create new tag on publish → Publish release* (the `release` workflow attaches the contract to a
+   Choose a tag → Create new tag on publish → Publish release* (the `Release` workflow attaches the contract to a
    release that already exists).
 2. **build**: runs the API tests, publishes the API and keeps it as an artifact for 30 days.
 3. **deploy** (environment `production`, so it waits for the reviewers you set there):
@@ -28,7 +28,7 @@ The reminders service (reminders, webhooks, auto-release) is a separate worker t
 Nothing is deployed while the repository variable `AZURE_WEBAPP_NAME` is empty, so tags pushed before the cloud exists
 do not fail.
 
-To deploy a tag again by hand (or to go back): *Actions → deploy → Run workflow* and type the tag.
+To deploy a tag again by hand (or to go back): *Actions → Deploy → Run workflow* and type the tag.
 
 ## Why the migrations run from the workflow
 
@@ -130,7 +130,7 @@ The API itself gets its settings in the App Service, not from GitHub: in the por
 
 ## Keeping Supabase awake
 
-The free Supabase plan pauses a project after a week without activity. The `keep-alive` workflow calls
+The free Supabase plan pauses a project after a week without activity. The `Keep Alive` workflow calls
 `GET /api/v1/health` every day at about 06:17 UTC; the call asks PostgreSQL, which counts as activity, and it also
 wakes the App Service, which sleeps without Always On. It does nothing while `API_URL` is empty. To try it now:
-*Actions → keep-alive → Run workflow*.
+*Actions → Keep Alive → Run workflow*.

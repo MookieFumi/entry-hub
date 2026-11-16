@@ -1,5 +1,5 @@
 # .github/workflows/deploy.yml
-name: deploy
+name: Deploy
 
 # Push a tag such as v1.0.0 to build the API, apply the migrations and deploy it to the Azure App Service of the demo.
 # Run it by hand with a tag to deploy that tag again (this is also how a failed deployment is rolled back).

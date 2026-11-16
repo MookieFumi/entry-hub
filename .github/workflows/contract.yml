@@ -1,7 +1,7 @@
 # .github/workflows/contract.yml
-name: API contract
+name: API Contract
 
-# Compares the committed contract of the pull request with the one on the base branch. The ci workflow already checks
+# Compares the committed contract of the pull request with the one on the base branch. The CI workflow already checks
 # that the committed contract matches the code, so this one only reads files and runs in seconds. It also runs when the
 # title is edited, because marking the change as breaking ("!") is what lets an incompatible change through.
 on:
