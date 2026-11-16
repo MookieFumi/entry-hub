@@ -5,6 +5,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The guard that decides which webhook targets are allowed is shared with the API, which uses it to validate URLs. -->
+    <Compile Include="..\EntryHub.Api\Domain\Webhooks\WebhookUrlGuard.cs" Link="Webhooks\WebhookUrlGuard.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EntryHub.ServiceDefaults\EntryHub.ServiceDefaults.csproj" />
   </ItemGroup>
 

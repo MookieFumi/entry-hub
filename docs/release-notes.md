@@ -2,6 +2,18 @@
 
 ## v1.1.0 (in progress)
 
+- **Webhook delivery.** A booking that is created, cancelled or moved saves an event for each enabled subscription that
+  wants it, in the same transaction as the change. The reminders service sends it as a `POST` with a JSON body
+  (`id`, `type`, `createdAt` and the booking in `data`) and these headers: `X-EntryHub-Event`, `X-EntryHub-Delivery`,
+  `X-EntryHub-Timestamp` (Unix seconds) and `X-EntryHub-Signature`, which is `v1=` and the lowercase hex HMAC-SHA256 of
+  `{timestamp}.{body}` with the secret of the subscription. Receivers should check the signature and ignore an old
+  timestamp. Any 2xx answer is a success. Anything else (a redirect included, which is not followed) is tried again
+  after 30 seconds and then 1, 2, 4 and 8 minutes, and given up after six attempts. Requests time out after 10 seconds
+  and only connect to public addresses, checked on the address that is really used. Facilities read the outcome with
+  `GET /webhooks/{id}/deliveries` (`status` filter, paged). Several copies of the service can run: each delivery is
+  reserved before it is sent. Limits to know: it needs the reminders service to be running (the demo does not deploy
+  it), the bookings that the service releases because nobody checked in do not send `booking.cancelled` yet, and the
+  secret of a subscription is stored as text because it is needed to sign.
 - **Webhook subscriptions.** Facilities manage them with `POST/GET /webhooks`, `PATCH /webhooks/{id}` (enable or
   disable) and `DELETE /webhooks/{id}`: an `https` URL and the events it wants (`booking.created`, `booking.cancelled`,
   `booking.rescheduled`). The response that creates a subscription shows its signing secret once; it is never listed

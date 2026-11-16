@@ -25,6 +25,10 @@ public static class WebhooksEndpoints
             .WithSummary("Enables or disables a subscription. Facilities only.")
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        webhooks.MapGet("/{id:guid}/deliveries", ListDeliveriesAsync).WithName("ListWebhookDeliveries")
+            .WithSummary("Lists what happened when events were sent to a subscription, newest first. Facilities only.")
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         webhooks.MapDelete("/{id:guid}", DeleteAsync).WithName("DeleteWebhook")
             .WithSummary("Deletes a subscription. Facilities only.")
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -61,6 +65,15 @@ public static class WebhooksEndpoints
         CancellationToken cancellationToken) =>
         await handler.HandleAsync(id, request, cancellationToken) is { } webhook
             ? TypedResults.Ok(webhook)
+            : TypedResults.Problem(title: "Webhook not found", statusCode: StatusCodes.Status404NotFound);
+
+    private static async Task<Results<Ok<PagedResponse<WebhookDeliveryResponse>>, ProblemHttpResult>> ListDeliveriesAsync(
+        Guid id,
+        [AsParameters] ListWebhookDeliveriesQuery query,
+        ListWebhookDeliveriesHandler handler,
+        CancellationToken cancellationToken) =>
+        await handler.HandleAsync(id, query, cancellationToken) is { } page
+            ? TypedResults.Ok(page)
             : TypedResults.Problem(title: "Webhook not found", statusCode: StatusCodes.Status404NotFound);
 
     private static async Task<Results<NoContent, ProblemHttpResult>> DeleteAsync(
