@@ -2541,6 +2541,224 @@
         ]
       }
     },
+    "/api/v1/webhooks": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Lists the webhook subscriptions of the tenant (without their secrets). Facilities only.",
+        "operationId": "ListWebhooks",
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Subscribes an https URL to booking events. The response shows the signing secret once. Facilities only.",
+        "operationId": "CreateWebhook",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/webhooks/{id}": {
+      "patch": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Enables or disables a subscription. Facilities only.",
+        "operationId": "UpdateWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Deletes a subscription. Facilities only.",
+        "operationId": "DeleteWebhook",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -3084,6 +3302,30 @@
               "$ref": "#/components/schemas/DayOfWeek"
             },
             "description": "Monday to Friday when left out."
+          }
+        }
+      },
+      "CreateWebhookRequest": {
+        "required": [
+          "url",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "maxLength": 2048,
+            "minLength": 0,
+            "type": "string",
+            "description": "Where to send the events: `https`, with a public host name or address."
+          },
+          "events": {
+            "maxItems": 3,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What to be told about: `booking.created`, `booking.cancelled` or `booking.rescheduled`."
           }
         }
       },
@@ -4695,6 +4937,98 @@
           }
         },
         "description": "Fields left out are not changed. OpenDays replaces the whole list when it is sent."
+      },
+      "UpdateWebhookRequest": {
+        "required": [
+          "isEnabled"
+        ],
+        "type": "object",
+        "properties": {
+          "isEnabled": {
+            "type": "boolean",
+            "description": "False pauses the subscription without deleting it."
+          }
+        }
+      },
+      "WebhookCreatedResponse": {
+        "required": [
+          "id",
+          "url",
+          "events",
+          "isEnabled",
+          "createdAt",
+          "secret"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the subscription.",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where the events are sent."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The events it receives."
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "description": "Whether it is receiving events."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was created.",
+            "format": "date-time"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signs every delivery with HMAC-SHA256. Store it now: it is not shown again."
+          }
+        }
+      },
+      "WebhookResponse": {
+        "required": [
+          "id",
+          "url",
+          "events",
+          "isEnabled",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the subscription.",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where the events are sent."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The events it receives."
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "description": "Whether it is receiving events."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When it was created.",
+            "format": "date-time"
+          }
+        },
+        "description": "A webhook subscription. The signing secret is only in the response that creates it."
       }
     },
     "securitySchemes": {
@@ -4733,6 +5067,9 @@
     },
     {
       "name": "Tenant"
+    },
+    {
+      "name": "Webhooks"
     },
     {
       "name": "Probes",

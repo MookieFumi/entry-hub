@@ -3,6 +3,7 @@ using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Domain.Sites;
+using EntryHub.Api.Domain.Webhooks;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -84,6 +85,7 @@ internal static class AuditRecorder
         Feature feature => ("Feature", feature.Id, feature.Name),
         SiteHoliday holiday => ("SiteHoliday", holiday.Id, holiday.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)),
         RoomBlock block => ("RoomBlock", block.Id, block.Reason),
+        WebhookSubscription webhook => ("Webhook", webhook.Id, webhook.Url),
         _ => null,
     };
 }
