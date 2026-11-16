@@ -171,6 +171,7 @@ The reminders service starts after the API (the API creates the schema) and look
 bookings that start within 15 minutes. Each one produces a log line, "Reminder for ana: ... starts at ...", that you
 see in the dashboard under the `reminders` resource. Both values are settings under `Reminders` (`LeadTime`,
 `PollInterval`). A booking is reminded once, even with several copies of the service running.
+With `Reminders:RunOnce=true` it does one pass and exits instead (exit code 0 if it worked, 1 if not), for a scheduled job.
 
 The dashboard also lists a `scalar-api-reference` resource: one API reference for the services of the application that
 publish an OpenAPI document, which today is only the API.

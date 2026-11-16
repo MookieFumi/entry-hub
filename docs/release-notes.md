@@ -2,6 +2,10 @@
 
 ## v1.1.0 (in progress)
 
+- **Single-pass mode.** With `Reminders:RunOnce=true` (environment variable `Reminders__RunOnce=true`) the reminders service
+  does one pass of reminders, webhook deliveries and auto-release, then exits: 0 if it worked, 1 if any part failed.
+  It is meant for a scheduled job (for example a GitHub Actions cron) where a worker cannot stay running. A reminder
+  then arrives as late as the interval of the schedule. The default, a continuous worker, is unchanged.
 - **Email reminders.** The reminders service sends each reminder through an `INotificationSender`. The default only
   logs it, now without the title, the room or any person. Setting `Notifications:Smtp:*` (off by default, see
   `docs/notifications.md`) sends an email instead. The address comes from the optional `email` claim of the token of
