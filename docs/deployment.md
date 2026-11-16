@@ -10,6 +10,9 @@ Every step has two ways: the Azure CLI commands, and the same thing in the brows
 The menu names in the browser steps were written from memory of the current interfaces and have not been checked
 against live accounts; the portals change often, so if a menu is missing, use the search box of the portal.
 
+The reminders service (reminders, webhooks, auto-release) is a separate worker that this workflow does not deploy; see
+[reminders-service.md](reminders-service.md) for how to run it next to the demo.
+
 ## How a release goes
 
 1. Create the tag `v1.0.0`: `git tag v1.0.0 && git push origin v1.0.0`, or in GitHub *Releases → Draft a new release →

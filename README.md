@@ -172,6 +172,7 @@ bookings that start within 15 minutes. Each one produces a log line, "Reminder f
 see in the dashboard under the `reminders` resource. Both values are settings under `Reminders` (`LeadTime`,
 `PollInterval`). A booking is reminded once, even with several copies of the service running.
 With `Reminders:RunOnce=true` it does one pass and exits instead (exit code 0 if it worked, 1 if not), for a scheduled job.
+How to build and deploy it, and what to do on the free Azure tier, is in [docs/reminders-service.md](docs/reminders-service.md).
 
 The dashboard also lists a `scalar-api-reference` resource: one API reference for the services of the application that
 publish an OpenAPI document, which today is only the API.
