@@ -2,6 +2,12 @@
 
 ## v1.1.0 (in progress)
 
+- **Webhook subscriptions.** Facilities manage them with `POST/GET /webhooks`, `PATCH /webhooks/{id}` (enable or
+  disable) and `DELETE /webhooks/{id}`: an `https` URL and the events it wants (`booking.created`, `booking.cancelled`,
+  `booking.rescheduled`). The response that creates a subscription shows its signing secret once; it is never listed
+  again. URLs with another scheme, credentials, a local name or a loopback, private, link-local or shared address are
+  rejected (400), a tenant can have 10 subscriptions (409) and every change is audited. This only stores the
+  subscriptions: the delivery of the events comes next.
 - **Cancel a series.** `POST /bookings/{id}/cancel?scope=series` cancels the booking and all the later occurrences of
   its series. The ones that the cancellation notice no longer allows (Facilities have no notice) are kept, and the
   response (200) lists the bookings that were cancelled and the ones that were kept, each with the rule that kept it.

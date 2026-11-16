@@ -37,9 +37,9 @@ public class ObjectLevelAuthorizationTests
     };
 
     /// <summary>
-    /// Endpoints with an id whose resource every employee may see on purpose: rooms are shared. ApproveBooking, RejectBooking, UpdateRoom, UpdateSite and UpdateFeature are Facilities only.
+    /// Endpoints with an id whose resource every employee may see on purpose: rooms are shared. ApproveBooking, RejectBooking, UpdateRoom, UpdateSite, UpdateFeature, UpdateWebhook and DeleteWebhook are Facilities only.
     /// </summary>
-    private static readonly HashSet<string> SharedResourceEndpoints = ["ApproveBooking", "GetRoom", "GetRoomSchedule", "RejectBooking", "StreamRoomOccupancy", "UpdateFeature", "UpdateRoom", "UpdateSite"];
+    private static readonly HashSet<string> SharedResourceEndpoints = ["ApproveBooking", "DeleteWebhook", "GetRoom", "GetRoomSchedule", "RejectBooking", "StreamRoomOccupancy", "UpdateFeature", "UpdateRoom", "UpdateSite", "UpdateWebhook"];
 
     public static TheoryData<string> PrivateEndpointNames() => [.. PrivateResourceEndpoints.Keys];
 

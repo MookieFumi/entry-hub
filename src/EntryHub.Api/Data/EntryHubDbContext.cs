@@ -4,6 +4,7 @@ using EntryHub.Api.Domain.Features;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Domain.Sites;
 using EntryHub.Api.Domain.Tenants;
+using EntryHub.Api.Domain.Webhooks;
 using EntryHub.Api.Tenancy;
 
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,8 @@ public sealed class EntryHubDbContext(
 
     public DbSet<BookingSeries> BookingSeries => Set<BookingSeries>();
 
+    public DbSet<WebhookSubscription> WebhookSubscriptions => Set<WebhookSubscription>();
+
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
@@ -69,6 +72,7 @@ public sealed class EntryHubDbContext(
         modelBuilder.Entity<AuditEntry>().HasQueryFilter(entry => entry.TenantId == TenantId);
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
         modelBuilder.Entity<BookingSeries>().HasQueryFilter(series => series.TenantId == TenantId);
+        modelBuilder.Entity<WebhookSubscription>().HasQueryFilter(webhook => webhook.TenantId == TenantId);
         modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }
 
