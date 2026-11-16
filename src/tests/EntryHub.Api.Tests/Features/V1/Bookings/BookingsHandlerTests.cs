@@ -67,7 +67,7 @@ public class BookingsHandlerTests
         await using var db = TestDatabase.CreateContext();
 
         return await new CancelBookingHandler(db, TestPolicy.Default(), TestPolicy.Reader(db), clock ?? TestClock.Default, TestAuthorization.Service)
-            .HandleAsync(TestUsers.PrincipalFor(caller), bookingId, CancellationToken.None);
+            .HandleAsync(TestUsers.PrincipalFor(caller), bookingId, CancelScope.Occurrence, CancellationToken.None);
     }
 
     private static Task<GetBookingResult> GetAsync(EntryHubDbContext db, Caller caller, Guid bookingId) =>

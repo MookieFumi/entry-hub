@@ -2,6 +2,11 @@
 
 ## v1.1.0 (in progress)
 
+- **Cancel a series.** `POST /bookings/{id}/cancel?scope=series` cancels the booking and all the later occurrences of
+  its series. The ones that the cancellation notice no longer allows (Facilities have no notice) are kept, and the
+  response (200) lists the bookings that were cancelled and the ones that were kept, each with the rule that kept it.
+  Without `scope` (or with `scope=occurrence`) only that booking is cancelled, as before (204). Each cancelled
+  occurrence gets its own audit entry.
 - **Recurring bookings.** `POST /bookings` accepts an optional `recurrence` (`frequency` Daily or Weekly, `interval`, and
   either `count` or `until`, at most 52 occurrences). The days are counted in the time zone of the site and the time of
   day is kept, so a 10:00 booking is still at 10:00 after the clocks change. Each occurrence goes through the same
