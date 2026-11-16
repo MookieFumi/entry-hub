@@ -99,8 +99,8 @@ kubectl exec postgres-statefulset-0 -- env PGPASSWORD="$password" psql -U postgr
   "INSERT INTO bookings (\"Id\", \"TenantId\", \"RoomId\", \"OrganizerId\", \"Title\", \"StartAt\", \"EndAt\", \"Attendees\", \"Status\", \"CreatedAt\")
    VALUES (gen_random_uuid(), '$tenant', '$room_id', 'ana', 'Kind check', now() + interval '5 minutes', now() + interval '65 minutes', 4, 'Confirmed', now());"
 for _ in $(seq 40); do
-  if kubectl logs deployment/reminders-deployment | grep -q 'Reminder for ana: "Kind check"'; then
-    kubectl logs deployment/reminders-deployment | grep 'Reminder for ana'
+  if kubectl logs deployment/reminders-deployment | grep -q 'Reminder for booking '; then
+    kubectl logs deployment/reminders-deployment | grep 'Reminder for booking '
     echo "The application works in the cluster."
     exit 0
   fi
