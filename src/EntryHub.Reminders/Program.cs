@@ -28,8 +28,11 @@ internal static class ReminderService
             builder.Services.AddSingleton<INotificationSender, LogNotificationSender>();
         }
 
+        // With Reminders:RunOnce the service does one pass and exits (for a scheduled job), so nothing runs in the
+        // background: the workers are only resolved and called once.
+        var runOnce = builder.Configuration.GetSection(ReminderOptions.SectionName).Get<ReminderOptions>()?.RunOnce == true;
+
         builder.Services.AddSingleton<ReminderWorker>();
-        builder.Services.AddHostedService(provider => provider.GetRequiredService<ReminderWorker>());
 
         // The webhook client is built by hand, not by IHttpClientFactory: the defaults of the service (retries,
         // service discovery) must not apply to requests that go to other people's servers.
@@ -38,8 +41,30 @@ internal static class ReminderService
         builder.Services.AddSingleton(provider => new WebhookSender(
             WebhookHttp.CreateClient(provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<WebhookOptions>>().Value.Timeout),
             provider.GetRequiredService<TimeProvider>()));
-        builder.Services.AddHostedService<WebhookWorker>();
+        builder.Services.AddSingleton<WebhookWorker>();
 
-        await builder.Build().RunAsync();
+        if (!runOnce)
+        {
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<ReminderWorker>());
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<WebhookWorker>());
+        }
+
+        using var host = builder.Build();
+
+        if (runOnce)
+        {
+            var settings = host.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<ReminderOptions>>().Value;
+            var reminders = host.Services.GetRequiredService<ReminderWorker>();
+            var webhooks = host.Services.GetRequiredService<WebhookWorker>();
+
+            Environment.ExitCode = await SinglePass.RunAsync(
+                token => reminders.RemindAsync(settings.LeadTime, token),
+                webhooks.DeliverAsync,
+                host.Services.GetRequiredService<ILogger<ReminderWorker>>(),
+                CancellationToken.None);
+            return;
+        }
+
+        await host.RunAsync();
     }
 }
