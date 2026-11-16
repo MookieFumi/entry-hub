@@ -5,30 +5,38 @@ namespace EntryHub.Reminders;
 /// <summary>
 /// A booking whose organizer has just been marked as reminded.
 /// </summary>
-public sealed record DueReminder(Guid BookingId, string OrganizerId, string Title, string RoomName, DateTimeOffset StartAt);
+public sealed record DueReminder(Guid TenantId, Guid BookingId, string OrganizerId, string? Email, string Title, string RoomName, DateTimeOffset StartAt);
 
 /// <summary>
 /// Reads the bookings of the API database that are about to start. The API owns the schema; this service only
-/// reads <c>bookings</c> and <c>rooms</c> and writes <c>ReminderSentAt</c>, the status of the bookings it releases and their audit
+/// reads <c>bookings</c> and <c>rooms</c> and writes <c>ReminderSentAt</c> and <c>ReminderLeaseUntil</c>, the status of the bookings it releases and their audit
 /// entries, one tenant at a time.
 /// </summary>
 public sealed class ReminderStore(NpgsqlDataSource dataSource)
 {
-    // One statement finds the due bookings, locks them and marks them, so two copies of this service never pick the
-    // same booking: the second one skips the rows the first one holds.
+    // One statement finds the due bookings, locks them and reserves them for a while, so two copies of this service
+    // never pick the same booking: the second one skips the rows the first one holds. The reminder is only done when
+    // it is marked as sent afterwards; if sending fails, the reservation lapses and a later round tries again.
     private const string ClaimSql = """
         WITH due AS (
             SELECT "Id" FROM bookings
             WHERE "Status" = 'Confirmed'
               AND "ReminderSentAt" IS NULL
+              AND ("ReminderLeaseUntil" IS NULL OR "ReminderLeaseUntil" <= @now)
               AND "StartAt" > @now
               AND "StartAt" <= @until
             FOR UPDATE SKIP LOCKED)
         UPDATE bookings AS booking
-        SET "ReminderSentAt" = @now
+        SET "ReminderLeaseUntil" = @leaseEnds
         FROM due, rooms AS room
         WHERE booking."Id" = due."Id" AND room."Id" = booking."RoomId"
-        RETURNING booking."Id", booking."OrganizerId", booking."Title", room."Name", booking."StartAt"
+        RETURNING booking."Id", booking."OrganizerId", booking."OrganizerEmail", booking."Title", room."Name", booking."StartAt"
+        """;
+
+    private const string MarkSql = """
+        UPDATE bookings
+        SET "ReminderSentAt" = @now, "ReminderLeaseUntil" = NULL
+        WHERE "Id" = ANY(@ids)
         """;
 
     // Cancels the confirmed bookings of tenants that turned the release on, when nobody checked in within their
@@ -52,10 +60,11 @@ public sealed class ReminderStore(NpgsqlDataSource dataSource)
         """;
 
     /// <summary>
-    /// Marks the confirmed bookings that start within <paramref name="leadTime"/> as reminded and returns them.
-    /// Each booking comes back once, so the reminder is delivered at most once.
+    /// Reserves the confirmed bookings that start within <paramref name="leadTime"/> and have not been reminded, and
+    /// returns them. A booking is not offered again for <paramref name="retryAfter"/>; once it is sent it must be marked
+    /// with <see cref="MarkRemindedAsync"/>, otherwise it comes back after that time.
     /// </summary>
-    public async Task<IReadOnlyList<DueReminder>> ClaimDueAsync(DateTimeOffset now, TimeSpan leadTime, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DueReminder>> ClaimDueAsync(DateTimeOffset now, TimeSpan leadTime, TimeSpan retryAfter, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
 
@@ -72,16 +81,19 @@ public sealed class ReminderStore(NpgsqlDataSource dataSource)
             {
                 claim.Parameters.AddWithValue("now", now);
                 claim.Parameters.AddWithValue("until", now + leadTime);
+                claim.Parameters.AddWithValue("leaseEnds", now + retryAfter);
 
                 await using var reader = await claim.ExecuteReaderAsync(cancellationToken);
                 while (await reader.ReadAsync(cancellationToken))
                 {
                     due.Add(new DueReminder(
+                        tenant,
                         reader.GetGuid(0),
                         reader.GetString(1),
-                        reader.GetString(2),
+                        reader.IsDBNull(2) ? null : reader.GetString(2),
                         reader.GetString(3),
-                        reader.GetFieldValue<DateTimeOffset>(4)));
+                        reader.GetString(4),
+                        reader.GetFieldValue<DateTimeOffset>(5)));
                 }
             }
 
@@ -89,6 +101,29 @@ public sealed class ReminderStore(NpgsqlDataSource dataSource)
         }
 
         return due;
+    }
+
+    /// <summary>
+    /// Marks reminders as sent, so they are not offered again.
+    /// </summary>
+    public async Task MarkRemindedAsync(IEnumerable<DueReminder> reminders, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+
+        foreach (var tenant in reminders.GroupBy(reminder => reminder.TenantId))
+        {
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            await SetTenantAsync(connection, transaction, tenant.Key, cancellationToken);
+
+            await using (var mark = new NpgsqlCommand(MarkSql, connection, transaction))
+            {
+                mark.Parameters.AddWithValue("now", now);
+                mark.Parameters.AddWithValue("ids", tenant.Select(reminder => reminder.BookingId).ToArray());
+                await mark.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
     }
 
     /// <summary>

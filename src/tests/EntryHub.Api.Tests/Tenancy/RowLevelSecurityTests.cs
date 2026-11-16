@@ -127,7 +127,7 @@ public class RowLevelSecurityTests
 
         // The service connects as the restricted role, so it only sees a tenant after it asks for it.
         var store = new ReminderStore(NpgsqlDataSource.Create(await RestrictedConnection.Value));
-        var due = await store.ClaimDueAsync(start.AddMinutes(-10), TimeSpan.FromMinutes(15), CancellationToken.None);
+        var due = await store.ClaimDueAsync(start.AddMinutes(-10), TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(1), CancellationToken.None);
 
         Assert.Equivalent(bookings.Select(booking => booking.Id), due.Select(reminder => reminder.BookingId));
     }

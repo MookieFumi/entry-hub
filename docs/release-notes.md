@@ -2,6 +2,12 @@
 
 ## v1.1.0 (in progress)
 
+- **Email reminders.** The reminders service sends each reminder through an `INotificationSender`. The default only
+  logs it, now without the title, the room or any person. Setting `Notifications:Smtp:*` (off by default, see
+  `docs/notifications.md`) sends an email instead. The address comes from the optional `email` claim of the token of
+  the organizer, kept in the booking when they book for themselves; a booking without one is counted in the log and
+  never fails. A reminder is marked as sent only after the send worked: a failed one is offered again after a minute
+  (`Reminders:RetryAfter`). Going live needs an SMTP provider and its credentials.
 - **Webhook delivery.** A booking that is created, cancelled or moved saves an event for each enabled subscription that
   wants it, in the same transaction as the change. The reminders service sends it as a `POST` with a JSON body
   (`id`, `type`, `createdAt` and the booking in `data`) and these headers: `X-EntryHub-Event`, `X-EntryHub-Delivery`,

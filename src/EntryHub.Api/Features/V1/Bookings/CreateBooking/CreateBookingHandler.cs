@@ -117,6 +117,7 @@ public sealed class CreateBookingHandler(EntryHubDbContext db, BookingPolicy pol
                 Id = Guid.CreateVersion7(),
                 RoomId = room.Id,
                 OrganizerId = organizer,
+                OrganizerEmail = organizer == caller.Id ? caller.Email : null,
                 CreatedBy = organizer == caller.Id ? null : caller.Id,
                 Title = request.Title.Trim(),
                 StartAt = occurrence.StartAt.ToUniversalTime(),

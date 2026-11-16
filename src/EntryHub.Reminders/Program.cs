@@ -1,4 +1,5 @@
 using EntryHub.Reminders;
+using EntryHub.Reminders.Notifications;
 using EntryHub.Reminders.Webhooks;
 
 // An explicit entry point keeps this assembly from declaring a type called Program, which would clash with the
@@ -15,6 +16,18 @@ internal static class ReminderService
         builder.Services.Configure<ReminderOptions>(builder.Configuration.GetSection(ReminderOptions.SectionName));
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<ReminderStore>();
+
+        // Reminders are logged unless the SMTP settings are on and complete.
+        builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection(NotificationOptions.SectionName));
+        if (builder.Configuration.GetSection(NotificationOptions.SectionName).Get<NotificationOptions>()?.Smtp.IsUsable == true)
+        {
+            builder.Services.AddSingleton<INotificationSender, SmtpNotificationSender>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<INotificationSender, LogNotificationSender>();
+        }
+
         builder.Services.AddSingleton<ReminderWorker>();
         builder.Services.AddHostedService(provider => provider.GetRequiredService<ReminderWorker>());
 

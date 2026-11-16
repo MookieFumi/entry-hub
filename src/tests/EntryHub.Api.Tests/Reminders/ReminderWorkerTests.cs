@@ -2,8 +2,10 @@ using EntryHub.Api.Domain.Bookings;
 using EntryHub.Api.Domain.Rooms;
 using EntryHub.Api.Tests.Support;
 using EntryHub.Reminders;
+using EntryHub.Reminders.Notifications;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Npgsql;
@@ -40,6 +42,7 @@ public class ReminderWorkerTests
         var logger = new ListLogger();
         var worker = new ReminderWorker(
             new ReminderStore(NpgsqlDataSource.Create(TestDatabase.ConnectionString)),
+            new LogNotificationSender(NullLogger<LogNotificationSender>.Instance),
             Options.Create(new ReminderOptions()),
             new FixedClock(now),
             logger);
@@ -48,8 +51,9 @@ public class ReminderWorkerTests
         await worker.RemindAsync(TimeSpan.FromMinutes(15), CancellationToken.None);
 
         var message = Assert.Single(logger.Messages);
-        Assert.Contains("ana", message, StringComparison.Ordinal);
-        Assert.Contains(roomName, message, StringComparison.Ordinal);
+        Assert.Equal("Reminders: 1 sent, 0 without an address, 0 to try again", message);
+        Assert.DoesNotContain("ana", message, StringComparison.Ordinal);
+        Assert.DoesNotContain(roomName, message, StringComparison.Ordinal);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider
