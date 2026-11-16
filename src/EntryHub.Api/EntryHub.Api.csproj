@@ -26,4 +26,9 @@
     <ProjectReference Include="..\EntryHub.ServiceDefaults\EntryHub.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The tests of the shared webhook guard call it directly. -->
+    <InternalsVisibleTo Include="EntryHub.Api.Tests" />
+  </ItemGroup>
+
 </Project>

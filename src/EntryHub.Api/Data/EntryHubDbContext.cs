@@ -48,6 +48,8 @@ public sealed class EntryHubDbContext(
 
     public DbSet<WebhookSubscription> WebhookSubscriptions => Set<WebhookSubscription>();
 
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
@@ -73,21 +75,24 @@ public sealed class EntryHubDbContext(
         modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.TenantId == TenantId);
         modelBuilder.Entity<BookingSeries>().HasQueryFilter(series => series.TenantId == TenantId);
         modelBuilder.Entity<WebhookSubscription>().HasQueryFilter(webhook => webhook.TenantId == TenantId);
+        modelBuilder.Entity<WebhookDelivery>().HasQueryFilter(delivery => delivery.TenantId == TenantId);
         modelBuilder.Entity<IdempotencyRecord>().HasQueryFilter(record => record.TenantId == TenantId);
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         StampBlockedRange();
         RecordAudit();
+        await EnqueueWebhooksAsync(cancellationToken);
         StampTenant();
-        return base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     public override int SaveChanges()
     {
         StampBlockedRange();
         RecordAudit();
+        EnqueueWebhooksAsync(CancellationToken.None).GetAwaiter().GetResult();
         StampTenant();
         return base.SaveChanges();
     }
@@ -105,6 +110,32 @@ public sealed class EntryHubDbContext(
 
         var entries = AuditRecorder.Record([.. ChangeTracker.Entries()], actorId, TenantId, (clock ?? TimeProvider.System).GetUtcNow());
         AuditEntries.AddRange(entries);
+    }
+
+    /// <summary>
+    /// Adds a delivery for each enabled subscription that wants an event caused by the pending booking changes, saved in
+    /// the same transaction. Nothing is added when no booking changes or the tenant has no subscriptions.
+    /// </summary>
+    private async Task EnqueueWebhooksAsync(CancellationToken cancellationToken)
+    {
+        if (TenantId == Guid.Empty || ChangeTracker.Entries<Booking>().All(entry => entry.State is EntityState.Unchanged or EntityState.Detached))
+        {
+            return;
+        }
+
+        var events = WebhookOutbox.Detect([.. ChangeTracker.Entries()]);
+
+        if (events.Count == 0)
+        {
+            return;
+        }
+
+        var subscriptions = await WebhookSubscriptions.AsNoTracking().Where(subscription => subscription.IsEnabled).ToListAsync(cancellationToken);
+
+        if (subscriptions.Count > 0)
+        {
+            WebhookDeliveries.AddRange(WebhookOutbox.Build(events, subscriptions, (clock ?? TimeProvider.System).GetUtcNow()));
+        }
     }
 
     /// <summary>

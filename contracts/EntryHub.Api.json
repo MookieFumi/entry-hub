@@ -2759,6 +2759,97 @@
         ]
       }
     },
+    "/api/v1/webhooks/{id}/deliveries": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Lists what happened when events were sent to a subscription, newest first. Facilities only.",
+        "operationId": "ListWebhookDeliveries",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "description": "Only deliveries in this state (`Pending`, `Succeeded` or `Failed`).",
+            "schema": {
+              "$ref": "#/components/schemas/WebhookDeliveryStatus"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "description": "Page number, from 1.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "description": "Items per page.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedResponseOfWebhookDeliveryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -3689,6 +3780,47 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RoomResponse"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PagedResponseOfWebhookDeliveryResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryResponse"
             }
           },
           "page": {
@@ -4991,6 +5123,105 @@
             "description": "Signs every delivery with HMAC-SHA256. Store it now: it is not shown again."
           }
         }
+      },
+      "WebhookDeliveryResponse": {
+        "required": [
+          "id",
+          "eventId",
+          "eventType",
+          "status",
+          "attempts",
+          "nextAttemptAt",
+          "lastAttemptAt",
+          "lastStatusCode",
+          "lastError",
+          "createdAt",
+          "completedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifier of the delivery.",
+            "format": "uuid"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Identifier of the event, also in the body that was sent.",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "The event, such as `booking.created`."
+          },
+          "status": {
+            "description": "Pending while attempts remain, then Succeeded or Failed.",
+            "$ref": "#/components/schemas/WebhookDeliveryStatus"
+          },
+          "attempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many times it was sent.",
+            "format": "int32"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the next attempt is due, while it is pending.",
+            "format": "date-time"
+          },
+          "lastAttemptAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it was last sent.",
+            "format": "date-time"
+          },
+          "lastStatusCode": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "HTTP status of the last attempt, when the receiver answered.",
+            "format": "int32"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the last attempt failed."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the event happened.",
+            "format": "date-time"
+          },
+          "completedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it succeeded or was given up.",
+            "format": "date-time"
+          }
+        },
+        "description": "What happened when an event was sent to a subscription. The body is not included."
+      },
+      "WebhookDeliveryStatus": {
+        "enum": [
+          "Pending",
+          "Succeeded",
+          "Failed"
+        ]
       },
       "WebhookResponse": {
         "required": [

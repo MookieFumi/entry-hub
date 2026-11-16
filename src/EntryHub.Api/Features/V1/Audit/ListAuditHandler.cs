@@ -7,7 +7,7 @@ namespace EntryHub.Api.Features.V1.Audit;
 
 public sealed class ListAuditHandler(EntryHubDbContext db)
 {
-    private static readonly string[] KnownTypes = ["Booking", "Room", "Site", "Rules", "Feature", "SiteHoliday", "RoomBlock", "Tenant"];
+    private static readonly string[] KnownTypes = ["Booking", "Room", "Site", "Rules", "Feature", "SiteHoliday", "RoomBlock", "Tenant", "Webhook"];
 
     public async Task<PagedResponse<AuditResponse>> HandleAsync(ListAuditQuery query, CancellationToken cancellationToken)
     {

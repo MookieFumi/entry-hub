@@ -44,6 +44,7 @@ public sealed class DeleteTenantDataHandler(EntryHubDbContext db, ITenantContext
             await db.IdempotencyRecords.ExecuteDeleteAsync(cancellationToken);
             var bookings = await db.Bookings.ExecuteDeleteAsync(cancellationToken);
             await db.BookingSeries.ExecuteDeleteAsync(cancellationToken);
+            await db.WebhookDeliveries.ExecuteDeleteAsync(cancellationToken);
             await db.WebhookSubscriptions.ExecuteDeleteAsync(cancellationToken);
             var blocks = await db.RoomBlocks.ExecuteDeleteAsync(cancellationToken);
             await db.Set<RoomFeature>().ExecuteDeleteAsync(cancellationToken);

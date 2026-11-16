@@ -8,7 +8,7 @@ namespace EntryHub.Api.Domain.Webhooks;
 /// public host. This checks what the URL says; it does not resolve names, so a delivery has to check the address it
 /// really connects to with <see cref="IsPublic"/> too.
 /// </summary>
-public static class WebhookUrlGuard
+internal static class WebhookUrlGuard
 {
     /// <returns>Why the URL cannot be used, or <see langword="null"/> when it can.</returns>
     public static string? Validate(string? url)
