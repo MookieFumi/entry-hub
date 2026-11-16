@@ -392,7 +392,7 @@ kind delete cluster --name entry-hub
 
 ## Releases
 
-Push a tag such as `v1.0.0` and the `release` workflow creates a GitHub Release with the contract attached
+Push a tag such as `v1.0.0` and the `Release` workflow creates a GitHub Release with the contract attached
 (`openapi-v1.json`) and publishes the static docs of that version to GitHub Pages. Pages only ever shows the latest
 release (https://mookie-studio.github.io/entry-hub/); older contracts stay attached to their releases. Enable it once in Settings > Pages, source GitHub Actions.
 
@@ -469,7 +469,7 @@ Docker and Podman as container runtimes.
 
 ## What CI reports on each pull request
 
-Every run of the `ci` workflow writes a report to its summary page, and on pull requests it keeps a single
+Every run of the `CI` workflow writes a report to its summary page, and on pull requests it keeps a single
 comment up to date (it is edited on each push, never duplicated):
 
 - **Version:** what GitVersion calculates for that branch, so a `feat` or a `fix` shows its effect before the merge.

@@ -1,5 +1,5 @@
 # .github/workflows/release.yml
-name: release
+name: Release
 
 # Push a tag such as v1.2.0 to publish a release with the API contract and the static docs.
 on:

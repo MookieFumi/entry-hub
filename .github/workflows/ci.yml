@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-name: ci
+name: CI
 
 on:
   pull_request:
